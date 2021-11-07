@@ -1,4 +1,6 @@
-import { GetOptions, Label } from './type-helpers'
+import { data } from '@serverless/cloud'
+
+import { GetOptions, Label, ResponseList } from './type-helpers'
 
 import {
   all, between, equals, greaterThan, greaterThanOrEqual, lessThan, lessThanOrEqual, partial,
@@ -22,9 +24,17 @@ export class Index<T=any> {
 
   operate(op: Operation<T>) {
     return (
-      this.options.namespace ? `${this.options.namespace}:` : ''
+      (this.options.namespace ? `${this.options.namespace}:` : '')
      + op(t => this.convert(t))
     )
+  }
+
+  for(t: T): Exact<T> {
+    return new Exact(this, t)
+  }
+
+  primary() {
+    return this.options.label === undefined
   }
 }
 
@@ -43,11 +53,25 @@ export abstract class Query<T=any> {
       return {}
     }
   }
+
+  async resolve() {
+    return await data.get(this.query(), this.options())
+  }
 }
 
 export class Exact<T=any> extends Query<T> {
   constructor(index: Index<T>, readonly param: T) { super(index) }
   protected operation() { return equals(this.param) }
+
+  async get<M>(CLS: new (obj: any) => M): Promise<M | undefined> {
+    const res = await this.resolve()
+
+    if (!res) {
+      return undefined
+    } else {
+      return new CLS(res)
+    }
+  }
 }
 
 export interface MultiQueryOptions<T> {
@@ -95,6 +119,14 @@ export class MultiQuery<T=any> extends Query<T> {
     }
 
     return opts
+  }
+
+  async get<M>(CLS: new (obj: any) => M): Promise<M[]> {
+    return (await this.resolve() as ResponseList<any>).items.map(item => new CLS(item.value))
+  }
+
+  async keys(): Promise<string[]> {
+    return (await this.resolve() as ResponseList<any>).items.map(i => i.key)
   }
 }
 

@@ -60,7 +60,7 @@ export abstract class Query<T=any> {
 }
 
 export class Exact<T=any> extends Query<T> {
-  constructor(index: Index<T>, readonly param: T) { super(index) }
+  constructor(i: Index<T>, readonly param: T) { super(i) }
   protected operation() { return equals(this.param) }
 
   async get<M>(CLS: new (obj: any) => M): Promise<M | undefined> {
@@ -82,11 +82,11 @@ export interface MultiQueryOptions<T> {
 
 export class MultiQuery<T=any> extends Query<T> {
   constructor(
-    index: Index<T>,
+    i: Index<T>,
     readonly op: Operation<T>,
     readonly opts: MultiQueryOptions<T> = {}
   ) {
-    super(index)
+    super(i)
   }
 
   protected operation() { return this.op }
@@ -131,31 +131,31 @@ export class MultiQuery<T=any> extends Query<T> {
 }
 
 export class Partial<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>, param: T) { super(index, partial(param)) }
+  constructor(i: Index<T>, param: T) { super(i, partial(param)) }
 }
 
 export class LessThan<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>, param: T) { super(index, lessThan(param)) }
+  constructor(i: Index<T>, param: T) { super(i, lessThan(param)) }
 }
 
 export class GreaterThan<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>, param: T) { super(index, greaterThan(param)) }
+  constructor(i: Index<T>, param: T) { super(i, greaterThan(param)) }
 }
 
 export class LessThanOrEqual<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>, param: T) { super(index, lessThanOrEqual(param)) }
+  constructor(i: Index<T>, param: T) { super(i, lessThanOrEqual(param)) }
 }
 
 export class GreaterThanOrEqual<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>, param: T) { super(index, greaterThanOrEqual(param)) }
+  constructor(i: Index<T>, param: T) { super(i, greaterThanOrEqual(param)) }
 }
 
 export class Between<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>, a: T, b: T) { super(index, between(a, b)) }
+  constructor(i: Index<T>, a: T, b: T) { super(i, between(a, b)) }
 }
 
 export class All<T=any> extends MultiQuery<T> {
-  constructor(index: Index<T>) { super(index, all()) }
+  constructor(i: Index<T>) { super(i, all()) }
 
   lessThan(t: T) { return new LessThan(this.index, t) }
   greaterThan(t: T) { return new GreaterThan(this.index, t) }
@@ -168,8 +168,4 @@ export class All<T=any> extends MultiQuery<T> {
   equals(t: T) { return this.exact(t) }
   before(t: T) { return this.lessThan(t) }
   after(t: T) { return this.greaterThan(t) }
-}
-
-export function indexBy<T=any>(index: Index<T>) {
-  return new All<T>(index)
 }

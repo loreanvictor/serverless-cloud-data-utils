@@ -2,6 +2,7 @@ import camelcase from 'camelcase-keys'
 import snakecase from 'snakecase-keys'
 import { data } from '@serverless/cloud'
 
+import { isSecondary } from './indexes'
 import { Exact } from './query'
 import { Labels } from './type-helpers'
 
@@ -45,7 +46,7 @@ export abstract class Model<T extends Model<T>> {
 
     const labels: {[label in Labels]?: string} = {}
     for (const key of keys) {
-      if (key.index.options.label) {
+      if (isSecondary(key.index)) {
         labels[key.index.options.label] = key.query()
       }
     }

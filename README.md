@@ -23,7 +23,7 @@ Utilities for working with [serverless cloud](https://www.serverless.com/cloud) 
 First you define your models and their indexes:
 
 ```ts
-import { Model, buildIndex, timekey } from 'serverless-cloud-data-utils'
+import { Model, buildIndex, indexBy, timekey } from 'serverless-cloud-data-utils'
 
 
 export const OrderId = buildIndex({ namespace: 'orders' })

@@ -1,7 +1,7 @@
 {
   "name": "serverless-cloud-data-utils",
   "description": "Utilities for working with serverless cloud data APIs.",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "main": "dist/es5/index.js",
   "module": "dist/es6/index.js",
   "types": "dist/es6/index.d.ts",

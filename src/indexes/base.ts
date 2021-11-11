@@ -1,5 +1,5 @@
 import { Operation } from '../operators'
-import { IndexOptions } from './options'
+import { IndexOptions, isNamespacedIndexOptions } from './options'
 
 
 export abstract class BaseIndex<T=any> {
@@ -13,7 +13,7 @@ export abstract class BaseIndex<T=any> {
 
   operate(op: Operation<T>) {
     return (
-      (this.options.namespace ? `${this.options.namespace}:` : '')
+      (isNamespacedIndexOptions(this.options) ? `${this.options.namespace}:` : '')
      + op(t => this.convert(t))
     )
   }

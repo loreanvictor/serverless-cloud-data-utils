@@ -54,7 +54,7 @@ export abstract class Model<T extends Model<T>> {
     await data.set(primary, snakecase(prune(this), { deep: true }), labels)
   }
 
-  async remove() {
+  async delete() {
     await data.remove(this.primary())
   }
 }

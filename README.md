@@ -48,7 +48,11 @@ export class Order extends Model<Order> {
   date: string
   
   keys() {
-    return [ OrderTime, OrderId, OrderOwner(this.owner) ]
+    return [
+      indexBy(OrderTime).exact(this.date),
+      indexBy(OrderId).exact(this.id),
+      indexBy(OrderOwner(this.owner)).exact(this.date),
+    ]
   }
 }
 ```

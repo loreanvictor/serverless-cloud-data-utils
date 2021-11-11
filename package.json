@@ -63,5 +63,21 @@
   },
   "peerDependencies": {
     "@serverless/cloud": "^2.3.7"
+  },
+  "nyc": {
+    "extends": "nyc-config-tsx",
+    "all": true,
+    "include": [
+      "src/**/*.ts",
+      "src/**/*.tsx"
+    ],
+    "exclude": [
+      "src/**/test/*",
+      "src/types/*"
+    ],
+    "reporter": [
+      "text",
+      "lcov"
+    ]
   }
 }

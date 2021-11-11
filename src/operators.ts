@@ -19,6 +19,7 @@ export interface BinaryOperator<T=any> extends Operator<T> {
 }
 
 export const all: NullaryOperator = () => () => '*'
+export const id: UnaryOperator = key => convert => convert(key)
 export const partial: UnaryOperator = key => convert => `${convert(key)}*`
 export const lessThan: UnaryOperator = key => convert => `<${convert(key)}`
 export const greaterThan: UnaryOperator = key => convert => `>${convert(key)}`

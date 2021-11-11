@@ -1,4 +1,4 @@
-import { buildIndex } from '../index'
+import { buildIndex } from '../..'
 
 
 describe('buildIndex()', () => {

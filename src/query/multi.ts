@@ -1,4 +1,4 @@
-import { Operation } from '../operators'
+import { Operation, id } from '../operators'
 import { BaseIndex } from '../indexes'
 import { hydrate, ModelConstructor } from '../hydrate'
 import { BaseQuery } from './base'
@@ -43,7 +43,7 @@ export class MultiQuery<T=any> extends BaseQuery<T> {
     }
 
     if (this.opts.start) {
-      opts.start = this.index.convert(this.opts.start)
+      opts.start = this.index.operate(id(this.opts.start))
     }
 
     if (this.opts.limit) {

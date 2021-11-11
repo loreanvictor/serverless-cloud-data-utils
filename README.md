@@ -106,5 +106,5 @@ await someOrder.save()
 //
 // delete latest order from last month
 //
-await ordersFromLastMonth[0].remove()
+await ordersFromLastMonth[0].delete()
 ```

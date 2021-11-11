@@ -10,8 +10,17 @@
 [![version](https://img.shields.io/npm/v/serverless-cloud-data-utils?logo=npm)](https://www.npmjs.com/package/serverless-cloud-data-utils)
 
 </div>
-  
+
 <br>
+
+Utilities for working with [serverless cloud](https://www.serverless.com/cloud) [data APIs](https://www.serverless.com/cloud/docs/apps/data). By default, accessing and modifying data via `@serverless/cloud` API revolves around namespaces and key expressions, tracking which can be a headache (imagine a typo in a namespace or a key expression). With `serverless-cloud-data-utils`, you can define your models and their indexes (access paths) programmatically, and then access and modify your data in a consistent and type-safe manner.
+
+<br>
+
+## How to Install
+
+Install via [NPM](https://www.npmjs.com/package/serverless-cloud-data-utils). Note that this library is a wrapper on top of [serverless cloud](https://www.serverless.com/cloud), so it would only work in an environment
+where `@serverless/cloud` package is installed (and is not a mock), i.e. on serverless cloud apps and instances.
   
 ```bash
 npm i serverless-cloud-data-utils
@@ -19,10 +28,13 @@ npm i serverless-cloud-data-utils
 
 <br>
 
-Utilities for working with [serverless cloud](https://www.serverless.com/cloud) [data APIs](https://www.serverless.com/cloud/docs/apps/data).
-First you define your models and their indexes:
+## How to Use
+
+First you need to define your models and their indexes:
 
 ```ts
+// order.model.ts
+
 import { Model, buildIndex, indexBy, timekey } from 'serverless-cloud-data-utils'
 
 
@@ -31,13 +43,13 @@ export const OrderId = buildIndex({ namespace: 'orders' })
 export const OrderTime = buildIndex({
   namespace: 'orders',
   label: 'label1',
-  converter: timekey
+  converter: timekey,    // --> timestamp strings are illegal by default, this converter takes care of that.
 })
 
 export const OrderOwner = owner => buildIndex({
   namespace: `orders_${owner.id}`,
+  label: 'label2',
   converter: timekey,
-  label: 'label2'
 })
 
 
@@ -59,56 +71,108 @@ export class Order extends Model<Order> {
 
 <br>
 
-Then you can access your data in a consistent and type-safe way:
+Now you can create and store new objects:
+
+```ts
+import { Order } from './order.model'
+
+const newOrder = new Order()
+newOrder.amount = 42
+newOrder.user = someUser
+newOrder.date = new Date().toISOString()
+newOrder.id = uuid.v4()
+
+await newOrder.save()
+```
+
+<br>
+
+Modify objects:
+
+```ts
+myOrder.amount += 10
+await myOrder.save()
+```
+
+<br>
+
+Delete objects:
+
+```ts
+await someOrder.delete()
+```
+
+<br>
+
+Get a specific object:
 
 ```ts
 import { indexBy } from 'serverless-cloud-data-utils'
-import { Order, OrderId, OrderTime, OrderOwner } from './order-model'
+import { Order, OderId } from './order.model'
 
+const order = await indexBy(OrderId).exact('some_id').get(Order)
+```
+
+<br>
+
+Or query objects with specific indexes:
+
+```ts
+import { indexBy } from 'serverless-cloud-data-utils'
+import { Order, OrderTime } from './order.model'
 
 //
-// get a single order by its id
+// fetch last 10 orders
 //
-const someOrder = await indexBy(OrderId).exact('some_id').get(Order)
 
-//
-// get latest orders of a specific user
-//
-const latestUserOrders = await indexBy(OrderOwner(user))
-  .reverse()
+const latestOrders = await indexBy(OrderTime)
   .limit(10)
+  .reverse()
   .get(Order)
+```
+```ts
+import { indexBy } from 'serverless-cloud-data-utils'
+import { Order, OrderOwner } from './order.model'
 
 //
-// get orders from last month
+// get orders of a user
+// which where issued last month
 //
+
 const lastMonth = new Date()
 lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-const ordersFromLastMotnh = await indexBy(OrderTime)
-  .before(lastMonth.toISOString())
+const userOrders = await indexBy(OrderOwner(someUser))
+  .after(lastMonth)
   .reverse()
   .get(Order)
-
-//
-// create a new order
-//
-const newOrder = new Order()
-newOrder.amount = 42
-newOrder.owner = user
-newOrder.id = uuid.v4()
-newOrder.date = new Date().toISOString()
-
-await newOrder.save()
-
-//
-// update data for some order
-//
-someOrder.amount += 10
-await someOrder.save()
-
-//
-// delete latest order from last month
-//
-await ordersFromLastMonth[0].delete()
 ```
+
+<br>
+
+## API
+
+_Coming soon(ish), but if you have TypeScript or a proper IDE, you should be able to deduce most functionality from above examples
+and available functions._
+
+<br>
+
+## Contribution
+
+Feedback and pull requests are more than welcome! Currently the main pressing issues are:
+
+- [ ] Full API documentation
+- [ ] Support for metadata
+
+<br>
+
+Here are some useful commands for contributing:
+
+```bash
+npm test          # runs all the tests
+```
+```bash
+npm run cov:view  # checks the coverage status, try to avoid coverage regression!
+```
+
+<br><br>

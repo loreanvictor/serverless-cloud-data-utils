@@ -27,8 +27,18 @@ import { Model, buildIndex, timekey } from 'serverless-cloud-data-utils'
 
 
 export const OrderId = buildIndex({ namespace: 'orders' })
-export const OrderTime = buildIndex({ namespace: 'orders', label: 'label1', converter: timekey })
-export const OrderOwner = owner => buildIndex({ namespace: `orders_${owner.id}`, converter: timekey, label: 'label2' })
+
+export const OrderTime = buildIndex({
+  namespace: 'orders',
+  label: 'label1',
+  converter: timekey
+})
+
+export const OrderOwner = owner => buildIndex({
+  namespace: `orders_${owner.id}`,
+  converter: timekey,
+  label: 'label2'
+})
 
 
 export class Order extends Model<Order> {
@@ -60,7 +70,10 @@ const someOrder = await indexBy(OrderId).exact('some_id').get(Order)
 //
 // get latest orders of a specific user
 //
-const latestUserOrders = await indexBy(OrderOwner(user)).reverse().limit(10).get(Order)
+const latestUserOrders = await indexBy(OrderOwner(user))
+  .reverse()
+  .limit(10)
+  .get(Order)
 
 //
 // get orders from last month
@@ -68,7 +81,10 @@ const latestUserOrders = await indexBy(OrderOwner(user)).reverse().limit(10).get
 const lastMonth = new Date()
 lastMonth.setMonth(lastMonth.getMonth() - 1)
 
-const ordersFromLastMotnh = await indexBy(OrderTime).before(lastMonth.toISOString()).reverse().get(Order)
+const ordersFromLastMotnh = await indexBy(OrderTime)
+  .before(lastMonth.toISOString())
+  .reverse()
+  .get(Order)
 
 //
 // create a new order

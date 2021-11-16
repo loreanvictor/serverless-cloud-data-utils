@@ -151,5 +151,23 @@ describe('Model', () => {
       y: 'WHATEVS'
     })).to.throw()
   })
+
+  it('should provide a utility for cleaning up the model.', () => {
+    const m = new M()
+    m.theX = 42
+    m.y = 'WHATEVS'
+    m.id = 'hola'
+
+    m.clean().should.eql({
+      id: 'hola',
+      the_x: 42,
+      y: 'WHATEVS'
+    })
+
+    m.clean(['y']).should.eql({
+      the_x: 42,
+      id: 'hola'
+    })
+  })
 })
 

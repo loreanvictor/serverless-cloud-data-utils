@@ -57,4 +57,11 @@ export abstract class Model<T extends Model<T>> {
   async delete() {
     await data.remove(this.primary())
   }
+
+  clean<K extends keyof T>(exclude: K[] = []) {
+    const cleaned = prune(this)
+    exclude.forEach(key => delete cleaned[key])
+
+    return snakecase(cleaned)
+  }
 }

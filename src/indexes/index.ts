@@ -19,6 +19,30 @@ export type AnonymousIndex<T> = AnonymousPrimaryIndex<T> | AnonymousSecondaryInd
 export type Index<T> = PrimaryIndex<T> | SecondaryIndex<T>
 
 
+/**
+ *
+ * Builds an index from the given options. An index describes an access path to
+ * database objects. It is highly recommended to provide a namespace in the options,
+ * indexes without a namespace cannot be used to conduct operations (e.g. less than, between, partial, etc).
+ *
+ * Each model **MUST** have exactly one primary index, i.e. an index without a label. For having multiple
+ * access paths, you need to create secondary indexes, which means you need to provide a label. The label
+ * **MUST** be unique per model, i.e. each model can have at most one secondary index with a given label.
+ *
+ * ```ts
+ * const primaryIndex = buildIndex({ namespace: 'orders' })
+ * const secondaryIndex = buildIndex({ namespace: 'orders', label: 'label1' })
+ * ```
+ *
+ * A converter may also be passed, for values that are not strings or do not default into
+ * legal strings for key expressions. For example, time strings are not allowed in key expressions by default,
+ * but using `timekey()` as converter will allow you to use time strings as keys.
+ *
+ * ```ts
+ * const primaryIndex = buildIndex({ namespace: 'orders', converter: timekey })
+ * ```
+ *
+ */
 export function buildIndex<T=any>(options?: AnonymousPrimaryIndexOptions<T>): AnonymousPrimaryIndex<T>
 export function buildIndex<T=any>(options: NamespacedPrimaryIndexOptions<T>): NamespacedPrimaryIndex<T>
 export function buildIndex<T=any>(options: AnonymousSecondaryIndexOptions<T>): AnonymousSecondaryIndex<T>

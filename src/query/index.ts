@@ -16,6 +16,11 @@ import {
 } from './all'
 
 
+/**
+ *
+ * Builds a query from given index.
+ *
+ */
 export function indexBy<T=any>(i: NamespacedSecondaryIndex<T>): NamespacedSecondaryAll<T>
 export function indexBy<T=any>(i: AnonymousSecondaryIndex<T>): AnonymousSecondaryAll<T>
 export function indexBy<T=any>(i: NamespacedPrimaryIndex<T>): NamespacedPrimaryAll<T>

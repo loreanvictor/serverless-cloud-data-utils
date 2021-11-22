@@ -12,6 +12,11 @@ export interface MultiQueryOptions<T> {
 }
 
 
+/**
+ *
+ * Represents a query with potentially multiple results.
+ *
+ */
 export class MultiQuery<T=any> extends BaseQuery<T> {
   constructor(
     i: BaseIndex<T>,
@@ -23,14 +28,29 @@ export class MultiQuery<T=any> extends BaseQuery<T> {
 
   protected operation() { return this.op }
 
+  /**
+   *
+   * @returns a query with items returned in reverse order.
+   *
+   */
   reverse() {
     return new MultiQuery(this.index, this.op, { ...this.opts, reverse: true })
   }
 
+  /**
+   *
+   * @returns a query with items starting after given value. Useful for pagination.
+   *
+   */
   start(start: T) {
     return new MultiQuery(this.index, this.op, { ...this.opts, start })
   }
 
+  /**
+   *
+   * @returns a query with a limited number of results.
+   *
+   */
   limit(limit: number) {
     return new MultiQuery(this.index, this.op, { ...this.opts, limit })
   }
@@ -53,10 +73,20 @@ export class MultiQuery<T=any> extends BaseQuery<T> {
     return opts
   }
 
+  /**
+   *
+   * Resolves the query using given model constructor, and returns a list of hydrated models.
+   *
+   */
   async get<M>(constructor: ModelConstructor<M>): Promise<M[]> {
     return (await this.resolve() as ResponseList<any>).items.map(item => hydrate(constructor, item.value))
   }
 
+  /**
+   *
+   * Resolves the given query, returning all matching keys.
+   *
+   */
   async keys(): Promise<string[]> {
     return (await this.resolve() as ResponseList<any>).items.map(i => i.key)
   }

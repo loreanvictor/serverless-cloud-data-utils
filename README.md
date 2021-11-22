@@ -30,22 +30,39 @@ npm i serverless-cloud-data-utils
 
 ## How to Use
 
-First you need to define your models and their indexes:
+📐 First you need to define your model and its indexes:
 
 ```ts
 // order.model.ts
 
 import { Model, buildIndex, indexBy, timekey } from 'serverless-cloud-data-utils'
 
+//
+// Indexes are ways you want to be able to access
+// your records.
+//
 
+//
+// 👉 this is for accessing orders by their id
+//
 export const OrderId = buildIndex({ namespace: 'orders' })
 
+//
+// 👉 this is for accessing orders by their time.
+//    this is a secondary index, so it needs an explicit label
+//    (which can be label1-label5)
+//
 export const OrderTime = buildIndex({
   namespace: 'orders',
   label: 'label1',
   converter: timekey,    // --> timestamp strings are illegal by default, this converter takes care of that.
 })
 
+
+// 
+// 👉 this parametric index allows accessing
+//    orders of a specific user.
+//
 export const OrderOwner = owner => buildIndex({
   namespace: `orders_${owner.id}`,
   label: 'label2',
@@ -59,6 +76,13 @@ export class Order extends Model<Order> {
   amount: number
   date: string
   
+  //
+  // 👉 this method indicates the indexes of each record
+  //    and how they are mapped to its properties.
+  //    note that you should have only one primary index,
+  //    and the secondary indexes should have distinct
+  //    labels.
+  //
   keys() {
     return [
       indexBy(OrderTime).exact(this.date),
@@ -71,7 +95,7 @@ export class Order extends Model<Order> {
 
 <br>
 
-Now you can create and store new objects:
+✨ Now you can create and store new objects:
 
 ```ts
 import { Order } from './order.model'
@@ -87,7 +111,7 @@ await newOrder.save()
 
 <br>
 
-Modify objects:
+✏️ Modify objects:
 
 ```ts
 myOrder.amount += 10
@@ -96,7 +120,7 @@ await myOrder.save()
 
 <br>
 
-Delete objects:
+🗑️ Delete objects:
 
 ```ts
 await someOrder.delete()
@@ -104,7 +128,7 @@ await someOrder.delete()
 
 <br>
 
-Get a specific object:
+🎯 Get a specific object:
 
 ```ts
 import { indexBy } from 'serverless-cloud-data-utils'
@@ -115,7 +139,7 @@ const order = await indexBy(OrderId).exact('some_id').get(Order)
 
 <br>
 
-Or query objects with specific indexes:
+🔍 Or query objects with specific indexes:
 
 ```ts
 import { indexBy } from 'serverless-cloud-data-utils'
@@ -150,10 +174,39 @@ const userOrders = await indexBy(OrderOwner(someUser))
 
 <br>
 
-## API
+📦 Use `.clean()` method for sending model data over network:
 
-_Coming soon(ish), but if you have TypeScript or a proper IDE, you should be able to deduce most functionality from above examples
-and available functions._
+```ts
+import { api } from '@serverless/cloud'
+import { indexBy } from 'serverless-cloud-data-utils'
+import { Order, OrderId } from './order.model'
+
+api.get('/:id', async (req, res) => {
+  const order = await indexBy(OrderId).exact(req.params.id).get(Order)
+
+  if (order) {
+    res.send(order.clean())
+  } else {
+    res.status(404).send()
+  }
+})
+```
+
+<br>
+
+🧹 You can also use `.clean()` to exclude some fields you don't want to
+send to the client:
+```ts
+order.clean(['id', 'owner'])
+```
+
+<br>
+
+## Formatting
+
+Fields of your models **MUST** always be camel case, since any data retreived from the database
+will be converted into camel case. Conversely, when you call `.clean()`, the data is also converted to snake case for transfer over the network.
+These rules also apply to nested objects.
 
 <br>
 

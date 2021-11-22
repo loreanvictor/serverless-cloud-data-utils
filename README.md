@@ -30,7 +30,7 @@ npm i serverless-cloud-data-utils
 
 ## How to Use
 
-First you need to define your models and their indexes:
+📐 First you need to define your models and their indexes:
 
 ```ts
 // order.model.ts
@@ -71,7 +71,7 @@ export class Order extends Model<Order> {
 
 <br>
 
-Now you can create and store new objects:
+✨ Now you can create and store new objects:
 
 ```ts
 import { Order } from './order.model'
@@ -87,7 +87,7 @@ await newOrder.save()
 
 <br>
 
-Modify objects:
+✏️ Modify objects:
 
 ```ts
 myOrder.amount += 10
@@ -96,7 +96,7 @@ await myOrder.save()
 
 <br>
 
-Delete objects:
+🗑️ Delete objects:
 
 ```ts
 await someOrder.delete()
@@ -104,7 +104,7 @@ await someOrder.delete()
 
 <br>
 
-Get a specific object:
+🎯 Get a specific object:
 
 ```ts
 import { indexBy } from 'serverless-cloud-data-utils'
@@ -115,7 +115,7 @@ const order = await indexBy(OrderId).exact('some_id').get(Order)
 
 <br>
 
-Or query objects with specific indexes:
+🔍 Or query objects with specific indexes:
 
 ```ts
 import { indexBy } from 'serverless-cloud-data-utils'

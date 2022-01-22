@@ -132,7 +132,7 @@ await someOrder.delete()
 
 ```ts
 import { indexBy } from 'serverless-cloud-data-utils'
-import { Order, OderId } from './order.model'
+import { Order, OrderId } from './order.model'
 
 const order = await indexBy(OrderId).exact('some_id').get(Order)
 ```

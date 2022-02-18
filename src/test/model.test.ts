@@ -12,6 +12,7 @@ class M extends Model<M> {
   id: string
   theX: number
   y: string
+  z: object
 
   keys() {
     return [
@@ -157,16 +158,51 @@ describe('Model', () => {
     m.theX = 42
     m.y = 'WHATEVS'
     m.id = 'hola'
+    m.z = {
+      o: {
+        r: 'amigo',
+        b: {
+          s: 'siracha'
+        }
+      }
+    }
 
     m.clean().should.eql({
       id: 'hola',
       the_x: 42,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
+      z: {
+        o: {
+          r: 'amigo',
+          b: {
+            s: 'siracha'
+          }
+        }
+      }
     })
 
     m.clean(['y']).should.eql({
       the_x: 42,
-      id: 'hola'
+      id: 'hola',
+      z: {
+        o: {
+          r: 'amigo',
+          b: {
+            s: 'siracha'
+          }
+        }
+      }
+    })
+
+    m.clean(['z.o.r.b.s']).should.eql({
+      the_x: 42,
+      id: 'hola',
+      y: 'WHATEVS',
+      z: {
+        o: {
+          r: 'amigo',
+        }
+      }
     })
   })
 })

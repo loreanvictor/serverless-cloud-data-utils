@@ -14,6 +14,42 @@ function prune(model: Model<any>): any {
   return copy
 }
 
+/**
+ *
+ * Recursively remove any object keys without values,
+ *
+ */
+function removeEmpty(obj: Model<any>): any {
+  return Object.fromEntries(
+    Object.entries(obj)
+      .filter(([_, v]) => v !== null)
+      .map(([k, v]) => [k, v === Object(v) ? removeEmpty(v) : v])
+  )
+}
+
+/**
+ *
+ * Remove properties for path provided as a string seperated by full stops
+ * ie model.clean(['x.y']), remove parent keys also if they have no other 
+ * properties.
+ *
+ */
+
+function deletePropertyByPath(model: Model<any>, path: string): any {
+  let copy: any = model
+  const pathArray = path.split('.')
+  const lastKeyOfPath = pathArray.pop()
+  if (lastKeyOfPath) {
+    pathArray.forEach((_, index) => {
+      copy = copy[pathArray[index]]
+      if (copy[index] === undefined) {
+        return
+      }
+    })
+    delete copy[lastKeyOfPath]
+    removeEmpty(copy)
+  }
+}
 
 /**
  *
@@ -101,9 +137,17 @@ export abstract class Model<T extends Model<T>> {
    * @param exclude Fields to be excluded.
    *
    */
-  clean<K extends keyof T>(exclude: K[] = []) {
+  clean<K extends keyof T>(exclude: string[] = []) {
     const cleaned = prune(this)
-    exclude.forEach(key => delete cleaned[key])
+    exclude.forEach(key => {
+      if (typeof key === 'string') {
+        deletePropertyByPath(cleaned, key)
+
+        return
+      }
+      delete cleaned[key]
+
+    })
 
     return snakecase(cleaned)
   }

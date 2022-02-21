@@ -12,7 +12,14 @@ class M extends Model<M> {
   id: string
   theX: number
   y: string
-  z: object
+  z: {
+    o: {
+      r: string,
+      b: {
+        s: string
+      }
+    }
+  }
 
   keys() {
     return [
@@ -194,13 +201,14 @@ describe('Model', () => {
       }
     })
 
-    m.clean(['z.o.r.b.s']).should.eql({
+    m.clean(['z.o.b.s']).should.eql({
       the_x: 42,
       id: 'hola',
       y: 'WHATEVS',
       z: {
         o: {
           r: 'amigo',
+          b:{},
         }
       }
     })

@@ -1,5 +1,6 @@
 import camelcase from 'camelcase-keys'
 import snakecase from 'snakecase-keys'
+import clone from 'just-clone'
 import { data } from '@serverless/cloud'
 
 import { isSecondary } from './indexes'
@@ -8,7 +9,7 @@ import { Labels, KeyPath } from './type-helpers'
 
 
 function prune(model: Model<any>): any {
-  const copy: any = { ...model }
+  const copy: any = clone(model)
   delete copy.__snapshot
 
   return copy
@@ -22,19 +23,12 @@ function prune(model: Model<any>): any {
  *
  */
 
-function deletePropertyByPath(model: Model<any>, path: string): any {
-  let copy: any = model
-  const pathArray = path.split('.')
-  const lastKeyOfPath = pathArray.pop()
-  if (lastKeyOfPath) {
-    pathArray.forEach((_, index) => {
-      copy = copy[pathArray[index]]
-      if (copy[index] === undefined) {
-        return
-      }
-    })
-    delete copy[lastKeyOfPath]
-  }
+function deletePropertyByPath<T>(target: T, key: KeyPath<T>): any {
+  const path = key.split('.')
+  const last = path.pop()
+
+  const cursor = path.reduce((acc, step) => acc[step], target as any)
+  delete cursor[last!]
 }
 
 /**
@@ -120,19 +114,13 @@ export abstract class Model<T extends Model<T>> {
    * Will return a clean JSON serializable version of the model.
    * This will remove internal data and convert the model to snake case.
    *
-   * @param exclude Fields to be excluded.
+   * @param exclude Fields or key paths to be excluded.
    *
    */
   clean(exclude: KeyPath<T>[] = []) {
     const cleaned = prune(this)
     exclude.forEach(key => {
-      if (typeof key === 'string') {
-        deletePropertyByPath(cleaned, key)
-
-        return
-      }
-      delete cleaned[key]
-
+      deletePropertyByPath(cleaned, key)
     })
 
     return snakecase(cleaned)

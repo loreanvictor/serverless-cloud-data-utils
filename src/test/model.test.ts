@@ -212,6 +212,18 @@ describe('Model', () => {
         }
       }
     })
+
+    m.clean(['y', 'z.o.r']).should.eql({
+      the_x: 42,
+      id: 'hola',
+      z: {
+        o: {
+          b: {
+            s: 'siracha'
+          }
+        }
+      }
+    })
   })
 })
 

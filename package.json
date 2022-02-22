@@ -40,6 +40,7 @@
     "@serverless/cloud": "^2.3.7",
     "@types/chai": "^4.2.22",
     "@types/chai-as-promised": "^7.1.4",
+    "@types/just-clone": "^3.2.2",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.6",
     "@types/sinon": "^10.0.6",
@@ -61,6 +62,7 @@
   },
   "dependencies": {
     "camelcase-keys": "^7.0.1",
+    "just-clone": "^5.0.1",
     "snakecase-keys": "^5.1.0"
   },
   "peerDependencies": {

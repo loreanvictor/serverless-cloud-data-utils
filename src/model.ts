@@ -10,6 +10,7 @@ import { Labels } from './type-helpers'
 function prune(model: Model<any>): any {
   const copy: any = { ...model }
   delete copy.__snapshot
+  delete copy.__shadowSnapshots
 
   return copy
 }
@@ -24,7 +25,7 @@ function prune(model: Model<any>): any {
  */
 export abstract class Model<T extends Model<T>> {
   __snapshot: string
-
+  __shadowSnapshots: string[]
   /**
    *
    * Creates a new model instance. If data is given,
@@ -39,6 +40,7 @@ export abstract class Model<T extends Model<T>> {
     if (obj) {
       Object.assign(this, camelcase(obj, { deep: true }))
       this.__snapshot = this.primary()
+      this.__shadowSnapshots = this.shadowKeys?.().map(shadowkeys => this.primary(shadowkeys)) ?? []
     }
   }
 
@@ -51,6 +53,14 @@ export abstract class Model<T extends Model<T>> {
    */
   abstract keys(): Exact[]
 
+  /**
+   *
+   * Returns a list of shadowKey lists, containing exact queries that specify access keys
+   * for each set of shadowKeys, each shadowKey list must have a primary, secondary keys must have separate labels.
+   *
+   */
+  shadowKeys?(): Exact[][]
+
   primary(keys?: Exact[]) {
     const pk = (keys || this.keys()).find(e => e.index.primary())
     if (!pk) {
@@ -60,10 +70,21 @@ export abstract class Model<T extends Model<T>> {
     return pk.query()
   }
 
+  secondaries(keys: Exact[]) {
+    const labels: {[label in Labels]?: string} = {}
+    for (const key of keys) {
+      if (isSecondary(key.index)) {
+        labels[key.index.options.label] = key.query()
+      }
+    }
+
+    return labels
+  }
+
   /**
    *
-   * Will save the model to the database. If the primary key has changed,
-   * the previous entry in the database will be deleted first.
+   * Will save the model to the database, as well as any shadows. If the primary key has changed,
+   * the previous entry in the database will be deleted first, this also runs for primary shadow keys.
    *
    */
   async save() {
@@ -74,23 +95,34 @@ export abstract class Model<T extends Model<T>> {
       await data.remove(this.__snapshot)
     }
 
-    const labels: {[label in Labels]?: string} = {}
-    for (const key of keys) {
-      if (isSecondary(key.index)) {
-        labels[key.index.options.label] = key.query()
-      }
-    }
+    await data.set(primary, snakecase(prune(this), { deep: true }), this.secondaries(keys))
 
-    await data.set(primary, snakecase(prune(this), { deep: true }), labels)
+    if (this.shadowKeys?.()){
+      const shadowKeys = this.shadowKeys?.()
+      const shadowPrimaries = shadowKeys?.map(shadowkeys => this.primary(shadowkeys)) ?? []
+      await Promise.all([
+        ...this.__shadowSnapshots.map(async (shadowSnapshot, index) => {
+          if (shadowSnapshot && shadowPrimaries[index] !== shadowSnapshot) {
+            await data.remove(shadowSnapshot)
+          }
+        }),
+        ...shadowPrimaries.map(async(shadowPrimary, index) => await data.set(shadowPrimary, snakecase(prune(this), { deep: true }), this.secondaries(shadowKeys[index])))
+      ])
+    }
   }
 
   /**
    *
-   * Will delete the model from the database.
+   * Will delete the model and any shadows from the database.
    *
    */
   async delete() {
     await data.remove(this.primary())
+    if (this.shadowKeys?.()) {
+      await Promise.all(
+        this.shadowKeys().map(async shadowKeys => await data.remove(this.primary(shadowKeys)))
+      )
+    }
   }
 
   /**

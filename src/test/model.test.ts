@@ -8,6 +8,12 @@ const ID = buildIndex()
 const X = buildIndex({ namespace: 'M', label: 'label1' })
 const Y = buildIndex({ label: 'label2', converter: x => x.toLowerCase() })
 
+const T = (t:string) => buildIndex({ namespace: `O:T_${t}` })
+const TX = (t: string, x: string) => buildIndex({ namespace: `O:T_${t}:X_${x}`, label: 'label1' })
+
+const C = (c: string) => buildIndex({ namespace: `O:C_${c}` })
+const CX = (c:string, x:string) => buildIndex({ namespace: `O:C_${c}:X_${x}`, label: 'label1', converter: t => t.join(',')  })
+
 class M extends Model<M> {
   id: string
   theX: number
@@ -34,6 +40,42 @@ class N extends Model<N> {
     ]
   }
 }
+
+class O extends Model<O>{
+  id: string
+  x:string
+  t: string[]
+  c: string
+  p: {
+    o: {
+      n: {
+        g: string
+      }
+    }
+  }
+
+  keys() {
+    return [
+      indexBy(ID).exact(this.id),
+      indexBy(X).exact(this.x),
+    ]
+  }
+  shadowKeys() {
+    return [
+      ...this.t.map(t => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+      [
+        indexBy(C(this.c)).exact(this.id),
+        indexBy(CX(this.c, this.x)).exact(this.t),
+      ]
+    ]
+
+  }
+
+}
+
 
 
 describe('Model', () => {
@@ -151,6 +193,60 @@ describe('Model', () => {
       y: 'WHATEVS'
     })).to.throw()
   })
+
+  it('should create model with shadow keys.', async() => {
+    const { set } = mockDataAPI()
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS'
+    })
+    await o.save()
+    set.should.have.callCount(4)
+    set.firstCall.firstArg.should.equal('Yo')
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS'
+    })
+    set.firstCall.lastArg.should.eql({
+      label1: 'M:Origato',
+    })
+    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    set.secondCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS'
+    })
+    set.secondCall.lastArg.should.eql({
+      label1: 'O:T_boba:X_Origato:Yo',
+    })
+    set.thirdCall.firstArg.should.equal('O:T_joba:Yo')
+    set.thirdCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS'
+    })
+    set.thirdCall.lastArg.should.eql({
+      label1: 'O:T_joba:X_Origato:Yo',
+    })
+    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    set.lastCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS'
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_WHATEVS:X_Origato:boba,joba',
+    })
+  })
+
+
 
   it('should provide a utility for cleaning up the model.', () => {
     const m = new M()

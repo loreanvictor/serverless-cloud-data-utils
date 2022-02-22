@@ -4,7 +4,7 @@ import { data } from '@serverless/cloud'
 
 import { isSecondary } from './indexes'
 import { Exact } from './query'
-import { Labels } from './type-helpers'
+import { Labels, KeyPath } from './type-helpers'
 
 
 function prune(model: Model<any>): any {
@@ -14,6 +14,28 @@ function prune(model: Model<any>): any {
   return copy
 }
 
+
+/**
+ *
+ * Remove properties for path provided as a string seperated by full stops
+ * ie model.clean(['x.y'])
+ *
+ */
+
+function deletePropertyByPath(model: Model<any>, path: string): any {
+  let copy: any = model
+  const pathArray = path.split('.')
+  const lastKeyOfPath = pathArray.pop()
+  if (lastKeyOfPath) {
+    pathArray.forEach((_, index) => {
+      copy = copy[pathArray[index]]
+      if (copy[index] === undefined) {
+        return
+      }
+    })
+    delete copy[lastKeyOfPath]
+  }
+}
 
 /**
  *
@@ -101,9 +123,17 @@ export abstract class Model<T extends Model<T>> {
    * @param exclude Fields to be excluded.
    *
    */
-  clean<K extends keyof T>(exclude: K[] = []) {
+  clean(exclude: KeyPath<T>[] = []) {
     const cleaned = prune(this)
-    exclude.forEach(key => delete cleaned[key])
+    exclude.forEach(key => {
+      if (typeof key === 'string') {
+        deletePropertyByPath(cleaned, key)
+
+        return
+      }
+      delete cleaned[key]
+
+    })
 
     return snakecase(cleaned)
   }

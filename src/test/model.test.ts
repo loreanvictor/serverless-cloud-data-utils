@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { mockDataAPI } from './util'
 
-import { Model, buildIndex, indexBy } from '..'
+import { Model, buildIndex, indexBy, ImmutableModel } from '..'
 
 const ID = buildIndex()
 const X = buildIndex({ namespace: 'M', label: 'label1' })
@@ -43,6 +43,36 @@ class N extends Model<N> {
 }
 
 class O extends Model<O> {
+  id: string
+  x: string
+  t: string[]
+  c: string
+  p: {
+        o: {
+            n: {
+                g: string;
+            };
+        };
+    }
+
+  keys() {
+    return [indexBy(ID).exact(this.id), indexBy(X).exact(this.x)]
+  }
+  shadowKeys() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+      [
+        indexBy(C(this.c)).exact(this.id),
+        indexBy(CX(this.c, this.x)).exact(this.t),
+      ],
+    ]
+  }
+}
+
+class R extends ImmutableModel<R> {
   id: string
   x: string
   t: string[]
@@ -200,6 +230,58 @@ describe('Model', () => {
       c: 'WHATEVS',
     })
     await o.save()
+    set.should.have.callCount(4)
+    set.firstCall.firstArg.should.equal('Yo')
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.firstCall.lastArg.should.eql({
+      label1: 'M:Origato',
+    })
+    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    set.secondCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.secondCall.lastArg.should.eql({
+      label1: 'O:T_boba:X_Origato:Yo',
+    })
+    set.thirdCall.firstArg.should.equal('O:T_joba:Yo')
+    set.thirdCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.thirdCall.lastArg.should.eql({
+      label1: 'O:T_joba:X_Origato:Yo',
+    })
+    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    set.lastCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_WHATEVS:X_Origato:boba,joba',
+    })
+  })
+
+  it('should create Immutablemodel with shadow keys.', async () => {
+    const { set } = mockDataAPI()
+    const r = new R({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    await r.save()
     set.should.have.callCount(4)
     set.firstCall.firstArg.should.equal('Yo')
     set.firstCall.args[1].should.eql({

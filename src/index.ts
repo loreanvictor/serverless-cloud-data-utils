@@ -1,7 +1,6 @@
 export * from './indexes'
 export * from './query'
 export * from './model'
-export * from './immutableModel'
 export * from './hydrate'
 export * from './operators'
 export * from './util'

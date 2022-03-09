@@ -97,16 +97,27 @@ export abstract class Model<T extends Model<T>> {
 
     await data.set(primary, snakecase(prune(this), { deep: true }), this.secondaries(keys))
 
-    if (this.shadowKeys){
+    if (this.shadowKeys) {
       const shadowKeys = this.shadowKeys()
-      const shadowPrimaries = shadowKeys.map(shadowkeys => this.primary(shadowkeys))
+      const shadowPrimaries = shadowKeys.map((shadowkeys) =>
+        this.primary(shadowkeys)
+      )
       await Promise.all([
-        ...this.__shadowSnapshots.map(async (shadowSnapshot, index) => {
-          if (shadowSnapshot && shadowPrimaries[index] !== shadowSnapshot) {
-            await data.remove(shadowSnapshot)
+        ...this.__shadowSnapshots.map((shadowSnapshot, index) => {
+          if (
+            shadowSnapshot &&
+                  shadowPrimaries[index] !== shadowSnapshot
+          ) {
+            return data.remove(shadowSnapshot)
           }
         }),
-        ...shadowPrimaries.map(async(shadowPrimary, index) => await data.set(shadowPrimary, snakecase(prune(this), { deep: true }), this.secondaries(shadowKeys[index])))
+        ...shadowPrimaries.map((shadowPrimary, index) =>
+          data.set(
+            shadowPrimary,
+            snakecase(prune(this), { deep: true }),
+            this.secondaries(shadowKeys[index])
+          )
+        ),
       ])
     }
   }
@@ -120,7 +131,9 @@ export abstract class Model<T extends Model<T>> {
     await data.remove(this.primary())
     if (this.shadowKeys) {
       await Promise.all(
-        this.shadowKeys().map(async shadowKeys => await data.remove(this.primary(shadowKeys)))
+        this.shadowKeys().map((shadowKeys) =>
+          data.remove(this.primary(shadowKeys))
+        )
       )
     }
   }

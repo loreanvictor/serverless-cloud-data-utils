@@ -1,20 +1,36 @@
 import camelcase from 'camelcase-keys'
 import snakecase from 'snakecase-keys'
+import clone from 'just-clone'
 import { data } from '@serverless/cloud'
 
 import { isSecondary } from './indexes'
 import { Exact } from './query'
-import { Labels } from './type-helpers'
+import { Labels, KeyPath } from './type-helpers'
 
 
 function prune(model: Model<any>): any {
-  const copy: any = { ...model }
+  const copy: any = clone(model)
   delete copy.__snapshot
   delete copy.__shadowSnapshots
 
   return copy
 }
 
+
+/**
+ *
+ * Remove properties for path provided as a string seperated by full stops
+ * ie model.clean(['x.y'])
+ *
+ */
+
+function deletePropertyByPath<T>(target: T, key: KeyPath<T>): any {
+  const path = key.split('.')
+  const last = path.pop()
+
+  const cursor = path.reduce((acc, step) => acc[step], target as any)
+  delete cursor[last!]
+}
 
 /**
  *
@@ -143,12 +159,14 @@ export abstract class Model<T extends Model<T>> {
    * Will return a clean JSON serializable version of the model.
    * This will remove internal data and convert the model to snake case.
    *
-   * @param exclude Fields to be excluded.
+   * @param exclude Fields or key paths to be excluded.
    *
    */
-  clean<K extends keyof T>(exclude: K[] = []) {
+  clean(exclude: KeyPath<T>[] = []) {
     const cleaned = prune(this)
-    exclude.forEach(key => delete cleaned[key])
+    exclude.forEach(key => {
+      deletePropertyByPath(cleaned, key)
+    })
 
     return snakecase(cleaned)
   }

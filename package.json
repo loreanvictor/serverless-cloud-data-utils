@@ -1,7 +1,7 @@
 {
   "name": "serverless-cloud-data-utils",
   "description": "Utilities for working with serverless cloud data APIs.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "main": "dist/es5/index.js",
   "module": "dist/es6/index.js",
   "types": "dist/es6/index.d.ts",
@@ -40,6 +40,7 @@
     "@serverless/cloud": "^2.3.7",
     "@types/chai": "^4.2.22",
     "@types/chai-as-promised": "^7.1.4",
+    "@types/just-clone": "^3.2.2",
     "@types/mocha": "^9.0.0",
     "@types/node": "^16.11.6",
     "@types/sinon": "^10.0.6",
@@ -61,6 +62,7 @@
   },
   "dependencies": {
     "camelcase-keys": "^7.0.1",
+    "just-clone": "^5.0.1",
     "snakecase-keys": "^5.1.0"
   },
   "peerDependencies": {

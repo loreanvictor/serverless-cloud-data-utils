@@ -1,5 +1,9 @@
 name: Test and Report Coverage
-on: push
+on:
+  push:
+    branches: ['*']
+  pull_request:
+    branches: ['*']
 jobs:
   do:
     runs-on: ubuntu-latest

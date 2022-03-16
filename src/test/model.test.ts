@@ -2,7 +2,6 @@ import { expect } from 'chai'
 import { mockDataAPI } from './util'
 
 import { Model, buildIndex, indexBy } from '..'
-import { Exact } from '../query'
 
 const ID = buildIndex()
 const X = buildIndex({ namespace: 'M', label: 'label1' })

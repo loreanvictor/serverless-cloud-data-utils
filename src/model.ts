@@ -7,6 +7,7 @@ import { isSecondary } from './indexes'
 import { Exact } from './query'
 import { Labels, KeyPath } from './type-helpers'
 
+const MAX_SHADOW_KEYS = 5
 
 function prune(model: Model<any>): any {
   const copy: any = clone(model)
@@ -15,6 +16,7 @@ function prune(model: Model<any>): any {
 
   return copy
 }
+
 
 
 /**
@@ -75,7 +77,15 @@ export abstract class Model<T extends Model<T>> {
    * for each set of shadowKeys, each shadowKey list must have a primary, secondary keys must have separate labels.
    *
    */
-  shadowKeys?(): Exact[][]
+  shadowKeys?(): Exact[][];
+
+  /**
+   *
+   * Use to disable maximum check on maximum shadow keys
+   *
+   */
+  unsafeShadowKeysUnbounded?(): boolean | null;
+
 
   primary(keys?: Exact[]) {
     const pk = (keys || this.keys()).find(e => e.index.primary())
@@ -86,13 +96,15 @@ export abstract class Model<T extends Model<T>> {
     return pk.query()
   }
 
-  secondaries(keys: Exact[]) {
-    const labels: {[label in Labels]?: string} = {}
-    for (const key of keys) {
+  secondaries(keys?: Exact[]) {
+    const labels: { [label in Labels]?: string } = {}
+    const secondaryKeys = keys || this.keys()
+    for (const key of secondaryKeys) {
       if (isSecondary(key.index)) {
         labels[key.index.options.label] = key.query()
       }
     }
+
 
     return labels
   }
@@ -111,19 +123,24 @@ export abstract class Model<T extends Model<T>> {
       await data.remove(this.__snapshot)
     }
 
-    await data.set(primary, snakecase(prune(this), { deep: true }), this.secondaries(keys))
+    await data.set(primary, snakecase(prune(this), { deep: true }), this.secondaries())
 
     if (this.shadowKeys) {
-      const shadowKeys = this.shadowKeys()
-      const shadowPrimaries = shadowKeys.map((shadowkeys) =>
-        this.primary(shadowkeys)
+      if (
+        this.shadowKeys().length > MAX_SHADOW_KEYS &&
+        !this.unsafeShadowKeysUnbounded?.()
+      ){
+        throw new Error(`Maximum number of ${MAX_SHADOW_KEYS} shadowKeys exceeded: Reduce number of shadowKeys, or add unsafeShadowKeysUnbounded method to model`)
+      }
+
+      const keySets = this.shadowKeys()
+      const shadowPrimaries = keySets.map((keySet) =>
+        this.primary(keySet)
       )
+
       await Promise.all([
-        ...this.__shadowSnapshots.map((shadowSnapshot, index) => {
-          if (
-            shadowSnapshot &&
-                  shadowPrimaries[index] !== shadowSnapshot
-          ) {
+        ...this.__shadowSnapshots.map((shadowSnapshot) => {
+          if (!shadowPrimaries.includes(shadowSnapshot)) {
             return data.remove(shadowSnapshot)
           }
         }),
@@ -131,7 +148,7 @@ export abstract class Model<T extends Model<T>> {
           data.set(
             shadowPrimary,
             snakecase(prune(this), { deep: true }),
-            this.secondaries(shadowKeys[index])
+            this.secondaries(keySets[index])
           )
         ),
       ])
@@ -147,8 +164,8 @@ export abstract class Model<T extends Model<T>> {
     await data.remove(this.primary())
     if (this.shadowKeys) {
       await Promise.all(
-        this.shadowKeys().map((shadowKeys) =>
-          data.remove(this.primary(shadowKeys))
+        this.shadowKeys().map((keySet) =>
+          data.remove(this.primary(keySet))
         )
       )
     }

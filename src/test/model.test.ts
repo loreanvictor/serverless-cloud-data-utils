@@ -2,6 +2,7 @@ import { expect } from 'chai'
 import { mockDataAPI } from './util'
 
 import { Model, buildIndex, indexBy } from '..'
+import { Exact } from '../query'
 
 const ID = buildIndex()
 const X = buildIndex({ namespace: 'M', label: 'label1' })
@@ -31,7 +32,6 @@ class M extends Model<M> {
       }
     }
   }
-
   keys() {
     return [
       indexBy(ID).exact(this.id),
@@ -44,7 +44,6 @@ class M extends Model<M> {
 class N extends Model<N> {
   x: number
   y: string
-
   keys() {
     return [indexBy(X).exact(this.x), indexBy(Y).exact(this.y)]
   }
@@ -80,6 +79,35 @@ class O extends Model<O> {
   }
 }
 
+class Q extends Model<Q> {
+  id: string
+  keys() {
+    return [indexBy(ID).exact(this.id)]
+  }
+}
+
+class P extends Model<P> {
+  id: string
+  t: string[]
+  x: string
+
+  unsafeShadowKeysUnbounded() {
+    return true
+  }
+  keys() {
+    return [indexBy(ID).exact(this.id)]
+  }
+  shadowKeys() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+    ]
+  }
+
+}
+
 describe('Model', () => {
   it('should create a new record based on its indexes.', async () => {
     const { set } = mockDataAPI()
@@ -101,6 +129,21 @@ describe('Model', () => {
     set.firstCall.lastArg.should.eql({
       label1: 'M:2',
       label2: 'yolo',
+    })
+  })
+
+  it('should create a new record where no secondary keys supplied.', async () => {
+    const { set } = mockDataAPI()
+    set.resolves()
+
+    const q = new Q()
+    q.id = 'hola'
+
+    await q.save()
+    set.should.have.been.calledOnce
+    set.firstCall.firstArg.should.equal('hola')
+    set.firstCall.args[1].should.eql({
+      id: 'hola',
     })
   })
 
@@ -312,7 +355,82 @@ describe('Model', () => {
     })
   })
 
+  it('should remove shadow entry where shadowKeys change', async () => {
+    const { set, remove } = mockDataAPI()
 
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+
+    o.t = ['boba']
+
+    await o.save()
+
+    remove.should.have.callCount(1)
+    remove.firstCall.firstArg.should.equal('O:T_joba:Yo')
+    set.firstCall.firstArg.should.equal('Yo')
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba'],
+      c: 'WHATEVS',
+    })
+    set.firstCall.lastArg.should.eql({
+      label1: 'M:Origato',
+    })
+    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    set.secondCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba'],
+      c: 'WHATEVS',
+    })
+    set.secondCall.lastArg.should.eql({
+      label1: 'O:T_boba:X_Origato:Yo',
+    })
+    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    set.lastCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba'],
+      c: 'WHATEVS',
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_WHATEVS:X_Origato:boba',
+    })
+  })
+
+  it('should throw an error if too many shadow keys are provided.', async () => {
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba', 'toga', 'hoga', 'roma'],
+      c: 'WHATEVS',
+    })
+
+    await expect(o.save()).to.eventually.be.rejected
+  })
+
+  it('should allow more than the maximum shadow keys with unsafeShadowKeysUnbounded.', async () => {
+    const { set } = mockDataAPI()
+    const p = new P({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
+      c: 'WHATEVS',
+    })
+
+    await p.save()
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
+      c: 'WHATEVS',
+    })
+  })
 
   it('should delete itself and shadow keys.', async () => {
     const { remove } = mockDataAPI()

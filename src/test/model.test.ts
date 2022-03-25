@@ -24,13 +24,13 @@ class M extends Model<M> {
   theX: number
   y: string
   z: {
-    o: {
-      r: string,
-      b: {
-        s: string
-      }
+        o: {
+            r: string;
+            b: {
+                s: string;
+            };
+        };
     }
-  }
   keys() {
     return [
       indexBy(ID).exact(this.id),
@@ -90,11 +90,31 @@ class P extends Model<P> {
   t: string[]
   x: string
 
-  unsafeShadowKeysUnbounded() {
-    return true
+  UNSAFE_shadowKeysUnbounded() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+    ]
   }
   keys() {
     return [indexBy(ID).exact(this.id)]
+  }
+}
+
+class R extends Model<R> {
+  id: string
+  t: string[]
+  x: string
+
+  UNSAFE_shadowKeysUnbounded() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+    ]
   }
   shadowKeys() {
     return [
@@ -104,7 +124,9 @@ class P extends Model<P> {
       ]),
     ]
   }
-
+  keys() {
+    return [indexBy(ID).exact(this.id)]
+  }
 }
 
 describe('Model', () => {
@@ -403,17 +425,19 @@ describe('Model', () => {
   })
 
   it('should throw an error if too many shadow keys are provided.', async () => {
-    const o = new O({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba', 'toga', 'hoga', 'roma'],
-      c: 'WHATEVS',
-    })
+    expect(
+      () =>
+        new O({
+          id: 'Yo',
+          x: 'Origato',
+          t: ['boba', 'joba', 'toga', 'hoga', 'roma'],
+          c: 'WHATEVS',
+        })
+    ).to.throw()
 
-    await expect(o.save()).to.eventually.be.rejected
   })
 
-  it('should allow more than the maximum shadow keys with unsafeShadowKeysUnbounded.', async () => {
+  it('should allow more than the maximum shadow keys with UNSAFE_shadowKeysUnbounded.', async () => {
     const { set } = mockDataAPI()
     const p = new P({
       id: 'Yo',
@@ -429,6 +453,18 @@ describe('Model', () => {
       t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
       c: 'WHATEVS',
     })
+  })
+
+  it('should throw an error if both UNSAFE_shadowKeysUnbounded and shadowKeys methods are used.', async () => {
+    expect(
+      () =>
+        new R({
+          id: 'Yo',
+          x: 'Origato',
+          t: ['boba', 'joba'],
+          c: 'WHATEVS',
+        })
+    ).to.throw()
   })
 
   it('should delete itself and shadow keys.', async () => {
@@ -475,7 +511,6 @@ describe('Model', () => {
     set.lastCall.lastArg.should.eql({
       label1: 'O:C_Bro:X_Origato:boba,joba',
     })
-
   })
 
   it('should provide a utility for cleaning up the model.', () => {
@@ -487,9 +522,9 @@ describe('Model', () => {
       o: {
         r: 'amigo',
         b: {
-          s: 'siracha'
-        }
-      }
+          s: 'siracha',
+        },
+      },
     }
 
     m.clean().should.eql({
@@ -500,10 +535,10 @@ describe('Model', () => {
         o: {
           r: 'amigo',
           b: {
-            s: 'siracha'
-          }
-        }
-      }
+            s: 'siracha',
+          },
+        },
+      },
     })
 
     m.clean(['y']).should.eql({
@@ -513,10 +548,10 @@ describe('Model', () => {
         o: {
           r: 'amigo',
           b: {
-            s: 'siracha'
-          }
-        }
-      }
+            s: 'siracha',
+          },
+        },
+      },
     })
 
     m.clean(['z.o.b.s']).should.eql({
@@ -526,9 +561,9 @@ describe('Model', () => {
       z: {
         o: {
           r: 'amigo',
-          b:{},
-        }
-      }
+          b: {},
+        },
+      },
     })
 
     m.clean(['y', 'z.o.r']).should.eql({
@@ -537,10 +572,10 @@ describe('Model', () => {
       z: {
         o: {
           b: {
-            s: 'siracha'
-          }
-        }
-      }
+            s: 'siracha',
+          },
+        },
+      },
     })
   })
 })

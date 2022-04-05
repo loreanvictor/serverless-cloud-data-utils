@@ -3,24 +3,34 @@ import { mockDataAPI } from './util'
 
 import { Model, buildIndex, indexBy } from '..'
 
-
 const ID = buildIndex()
 const X = buildIndex({ namespace: 'M', label: 'label1' })
-const Y = buildIndex({ label: 'label2', converter: x => x.toLowerCase() })
+const Y = buildIndex({ label: 'label2', converter: (x) => x.toLowerCase() })
+
+const T = (t: string) => buildIndex({ namespace: `O:T_${t}` })
+const TX = (t: string, x: string) =>
+  buildIndex({ namespace: `O:T_${t}:X_${x}`, label: 'label1' })
+
+const C = (c: string) => buildIndex({ namespace: `O:C_${c}` })
+const CX = (c: string, x: string) =>
+  buildIndex({
+    namespace: `O:C_${c}:X_${x}`,
+    label: 'label1',
+    converter: (t) => t.join(','),
+  })
 
 class M extends Model<M> {
   id: string
   theX: number
   y: string
   z: {
-    o: {
-      r: string,
-      b: {
-        s: string
-      }
+        o: {
+            r: string;
+            b: {
+                s: string;
+            };
+        };
     }
-  }
-
   keys() {
     return [
       indexBy(ID).exact(this.id),
@@ -30,19 +40,94 @@ class M extends Model<M> {
   }
 }
 
-
 class N extends Model<N> {
   x: number
   y: string
+  keys() {
+    return [indexBy(X).exact(this.x), indexBy(Y).exact(this.y)]
+  }
+}
+
+class O extends Model<O> {
+  id: string
+  x: string
+  t: string[]
+  c: string
+  p: {
+        o: {
+            n: {
+                g: string;
+            };
+        };
+    }
 
   keys() {
+    return [indexBy(ID).exact(this.id), indexBy(X).exact(this.x)]
+  }
+  shadowKeys() {
     return [
-      indexBy(X).exact(this.x),
-      indexBy(Y).exact(this.y),
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+      [
+        indexBy(C(this.c)).exact(this.id),
+        indexBy(CX(this.c, this.x)).exact(this.t),
+      ],
     ]
   }
 }
 
+class Q extends Model<Q> {
+  id: string
+  keys() {
+    return [indexBy(ID).exact(this.id)]
+  }
+}
+
+class P extends Model<P> {
+  id: string
+  t: string[]
+  x: string
+
+  UNSAFE_shadowKeysUnbounded() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+    ]
+  }
+  keys() {
+    return [indexBy(ID).exact(this.id)]
+  }
+}
+
+class R extends Model<R> {
+  id: string
+  t: string[]
+  x: string
+
+  UNSAFE_shadowKeysUnbounded() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+    ]
+  }
+  shadowKeys() {
+    return [
+      ...this.t.map((t) => [
+        indexBy(T(t)).exact(this.id),
+        indexBy(TX(t, this.x)).exact(this.id),
+      ]),
+    ]
+  }
+  keys() {
+    return [indexBy(ID).exact(this.id)]
+  }
+}
 
 describe('Model', () => {
   it('should create a new record based on its indexes.', async () => {
@@ -64,7 +149,22 @@ describe('Model', () => {
     })
     set.firstCall.lastArg.should.eql({
       label1: 'M:2',
-      label2: 'yolo'
+      label2: 'yolo',
+    })
+  })
+
+  it('should create a new record where no secondary keys supplied.', async () => {
+    const { set } = mockDataAPI()
+    set.resolves()
+
+    const q = new Q()
+    q.id = 'hola'
+
+    await q.save()
+    set.should.have.been.calledOnce
+    set.firstCall.firstArg.should.equal('hola')
+    set.firstCall.args[1].should.eql({
+      id: 'hola',
     })
   })
 
@@ -72,7 +172,7 @@ describe('Model', () => {
     const m = new M({
       id: 'hola',
       the_x: 42,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
     })
 
     m.id.should.equal('hola')
@@ -86,7 +186,7 @@ describe('Model', () => {
     const m = new M({
       id: 'hola',
       the_x: 42,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
     })
 
     await m.delete()
@@ -99,7 +199,7 @@ describe('Model', () => {
     const m = new M({
       id: 'hola',
       the_x: 42,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
     })
 
     m.theX = 43
@@ -111,11 +211,11 @@ describe('Model', () => {
     set.firstCall.args[1].should.eql({
       id: 'hola',
       the_x: 43,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
     })
     set.firstCall.lastArg.should.eql({
       label1: 'M:43',
-      label2: 'whatevs'
+      label2: 'whatevs',
     })
   })
 
@@ -125,7 +225,7 @@ describe('Model', () => {
     const m = new M({
       id: 'hola',
       the_x: 42,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
     })
 
     m.id = 'yolo'
@@ -137,11 +237,11 @@ describe('Model', () => {
     set.firstCall.args[1].should.eql({
       id: 'yolo',
       the_x: 42,
-      y: 'WHATEVS'
+      y: 'WHATEVS',
     })
     set.firstCall.lastArg.should.eql({
       label1: 'M:42',
-      label2: 'whatevs'
+      label2: 'whatevs',
     })
   })
 
@@ -154,10 +254,263 @@ describe('Model', () => {
   })
 
   it('should throw an error during creation if no primary key specified.', () => {
-    expect(() => new N({
-      x: 42,
-      y: 'WHATEVS'
-    })).to.throw()
+    expect(
+      () =>
+        new N({
+          x: 42,
+          y: 'WHATEVS',
+        })
+    ).to.throw()
+  })
+
+  it('should create model with shadow keys.', async () => {
+    const { set } = mockDataAPI()
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    await o.save()
+    set.should.have.callCount(4)
+    set.firstCall.firstArg.should.equal('Yo')
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.firstCall.lastArg.should.eql({
+      label1: 'M:Origato',
+    })
+    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    set.secondCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.secondCall.lastArg.should.eql({
+      label1: 'O:T_boba:X_Origato:Yo',
+    })
+    set.thirdCall.firstArg.should.equal('O:T_joba:Yo')
+    set.thirdCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.thirdCall.lastArg.should.eql({
+      label1: 'O:T_joba:X_Origato:Yo',
+    })
+    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    set.lastCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_WHATEVS:X_Origato:boba,joba',
+    })
+  })
+
+  it('should remove previous entry and shadowKey entries if primary key has changed.', async () => {
+    const { set, remove } = mockDataAPI()
+
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+
+    o.id = 'Bye'
+
+    await o.save()
+
+    remove.should.have.callCount(4)
+    remove.firstCall.firstArg.should.equal('Yo')
+    remove.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    remove.thirdCall.firstArg.should.equal('O:T_joba:Yo')
+    remove.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    set.firstCall.firstArg.should.equal('Bye')
+    set.firstCall.args[1].should.eql({
+      id: 'Bye',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.firstCall.lastArg.should.eql({
+      label1: 'M:Origato',
+    })
+    set.secondCall.firstArg.should.equal('O:T_boba:Bye')
+    set.secondCall.args[1].should.eql({
+      id: 'Bye',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.secondCall.lastArg.should.eql({
+      label1: 'O:T_boba:X_Origato:Bye',
+    })
+    set.thirdCall.firstArg.should.equal('O:T_joba:Bye')
+    set.thirdCall.args[1].should.eql({
+      id: 'Bye',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.thirdCall.lastArg.should.eql({
+      label1: 'O:T_joba:X_Origato:Bye',
+    })
+    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Bye')
+    set.lastCall.args[1].should.eql({
+      id: 'Bye',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_WHATEVS:X_Origato:boba,joba',
+    })
+  })
+
+  it('should remove shadow entry where shadowKeys change', async () => {
+    const { set, remove } = mockDataAPI()
+
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+
+    o.t = ['boba']
+
+    await o.save()
+
+    remove.should.have.callCount(1)
+    remove.firstCall.firstArg.should.equal('O:T_joba:Yo')
+    set.firstCall.firstArg.should.equal('Yo')
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba'],
+      c: 'WHATEVS',
+    })
+    set.firstCall.lastArg.should.eql({
+      label1: 'M:Origato',
+    })
+    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    set.secondCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba'],
+      c: 'WHATEVS',
+    })
+    set.secondCall.lastArg.should.eql({
+      label1: 'O:T_boba:X_Origato:Yo',
+    })
+    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    set.lastCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba'],
+      c: 'WHATEVS',
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_WHATEVS:X_Origato:boba',
+    })
+  })
+
+  it('should throw an error if too many shadow keys are provided.', async () => {
+    expect(
+      () =>
+        new O({
+          id: 'Yo',
+          x: 'Origato',
+          t: ['boba', 'joba', 'toga', 'hoga', 'roma'],
+          c: 'WHATEVS',
+        })
+    ).to.throw()
+
+  })
+
+  it('should allow more than the maximum shadow keys with UNSAFE_shadowKeysUnbounded.', async () => {
+    const { set } = mockDataAPI()
+    const p = new P({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
+      c: 'WHATEVS',
+    })
+
+    await p.save()
+    set.firstCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
+      c: 'WHATEVS',
+    })
+  })
+
+  it('should throw an error if both UNSAFE_shadowKeysUnbounded and shadowKeys methods are used.', async () => {
+    expect(
+      () =>
+        new R({
+          id: 'Yo',
+          x: 'Origato',
+          t: ['boba', 'joba'],
+          c: 'WHATEVS',
+        })
+    ).to.throw()
+  })
+
+  it('should delete itself and shadow keys.', async () => {
+    const { remove } = mockDataAPI()
+
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+
+    await o.delete()
+    remove.should.have.callCount(4)
+    remove.firstCall.firstArg.should.equal('Yo')
+    remove.secondCall.firstArg.should.equal('O:T_boba:Yo')
+    remove.thirdCall.firstArg.should.equal('O:T_joba:Yo')
+    remove.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+  })
+
+  it('should be able to update itself and shadow entries', async () => {
+    const { set, remove } = mockDataAPI()
+
+    const o = new O({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'WHATEVS',
+    })
+
+    o.c = 'Bro'
+    await o.save()
+
+    remove.should.have.been.calledOnce
+    set.should.have.callCount(4)
+    set.firstCall.firstArg.should.equal('Yo')
+    set.lastCall.firstArg.should.equal('O:C_Bro:Yo')
+    set.lastCall.args[1].should.eql({
+      id: 'Yo',
+      x: 'Origato',
+      t: ['boba', 'joba'],
+      c: 'Bro',
+    })
+    set.lastCall.lastArg.should.eql({
+      label1: 'O:C_Bro:X_Origato:boba,joba',
+    })
   })
 
   it('should provide a utility for cleaning up the model.', () => {
@@ -169,9 +522,9 @@ describe('Model', () => {
       o: {
         r: 'amigo',
         b: {
-          s: 'siracha'
-        }
-      }
+          s: 'siracha',
+        },
+      },
     }
 
     m.clean().should.eql({
@@ -182,10 +535,10 @@ describe('Model', () => {
         o: {
           r: 'amigo',
           b: {
-            s: 'siracha'
-          }
-        }
-      }
+            s: 'siracha',
+          },
+        },
+      },
     })
 
     m.clean(['y']).should.eql({
@@ -195,10 +548,10 @@ describe('Model', () => {
         o: {
           r: 'amigo',
           b: {
-            s: 'siracha'
-          }
-        }
-      }
+            s: 'siracha',
+          },
+        },
+      },
     })
 
     m.clean(['z.o.b.s']).should.eql({
@@ -208,9 +561,9 @@ describe('Model', () => {
       z: {
         o: {
           r: 'amigo',
-          b:{},
-        }
-      }
+          b: {},
+        },
+      },
     })
 
     m.clean(['y', 'z.o.r']).should.eql({
@@ -219,11 +572,10 @@ describe('Model', () => {
       z: {
         o: {
           b: {
-            s: 'siracha'
-          }
-        }
-      }
+            s: 'siracha',
+          },
+        },
+      },
     })
   })
 })
-

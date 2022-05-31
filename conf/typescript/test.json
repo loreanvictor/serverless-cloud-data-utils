@@ -1,6 +1,8 @@
 {
   "extends": "./build",
   "compilerOptions": {
-    "target": "es5"
+    "module": "esnext",
+    "target": "es6",
+    "esModuleInterop": true
   }
 }

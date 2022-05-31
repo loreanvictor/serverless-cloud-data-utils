@@ -1,8 +1,0 @@
-{
-  "extends": "./build",
-  "compilerOptions": {
-    "inlineSources": true,
-    "target": "es6",
-    "outDir": "../../dist/es6/"
-  }
-}

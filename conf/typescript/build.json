@@ -1,10 +1,9 @@
 {
-  "extends": "./base",
-  "exclude": [
-    "../../test.ts",
-    "../../src/test/**/*",
-    "../../src/**/test/*",
-    "../../src/**/*.test.ts",
-    "../../src/**/*.test.tsx"
-  ]
+    "extends": "./base",
+    "compilerOptions": {
+        "inlineSources": true,
+        "target": "es6",
+        "skipLibCheck": true,
+        "outDir": "../../dist/"
+    }
 }

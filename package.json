@@ -1,87 +1,88 @@
 {
-  "name": "serverless-cloud-data-utils",
-  "description": "Utilities for working with serverless cloud data APIs.",
-  "version": "0.3.3",
-  "main": "dist/es6/index.js",
-  "module": "dist/es6/index.js",
-  "types": "dist/es6/index.d.ts",
-  "type": "module",
-  "scripts": {
-    "test": "mocha -r ./conf/test.js",
-    "build-es5": "tsc -p conf/typescript/es5.json",
-    "build-es6": "tsc -p conf/typescript/es6.json",
-    "build": "npm run build-es5 && npm run build-es6",
-    "cov:inst": "nyc instrument --compact false src .instrumented",
-    "cov:gen": "nyc npm run test",
-    "cov:view": "nyc npm run test && npm run cov:clean",
-    "cov:travis": "nyc npm run test && npx codecov",
-    "cov:clean": "rm -fr ./.nyc_output && rm -fr ./coverage"
-  },
-  "files": [
-    "dist/es6"
-  ],
-  "sideEffects": false,
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/loreanvictor/serverless-cloud-data-utils.git"
-  },
-  "keywords": [
-    "serverless",
-    "data",
-    "orm"
-  ],
-  "author": "Eugene Ghanizadeh Khoub <ghanizadeh.eugene@gmail.com>",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/loreanvictor/serverless-cloud-data-utils/issues"
-  },
-  "homepage": "https://github.com/loreanvictor/serverless-cloud-data-utils#readme",
-  "devDependencies": {
-    "@serverless/cloud": "^2.3.7",
-    "@types/chai": "^4.2.22",
-    "@types/chai-as-promised": "^7.1.4",
-    "@types/just-clone": "^3.2.2",
-    "@types/mocha": "^9.0.0",
-    "@types/node": "^16.11.6",
-    "@types/sinon": "^10.0.6",
-    "@types/sinon-chai": "^3.2.5",
-    "@typescript-eslint/eslint-plugin": "^5.3.0",
-    "@typescript-eslint/parser": "^5.3.0",
-    "chai": "^4.3.4",
-    "chai-as-promised": "^7.1.1",
-    "eslint": "^8.2.0",
-    "mocha": "^9.1.3",
-    "nyc": "^15.1.0",
-    "nyc-config-tsx": "^0.1.0",
-    "sinon": "^12.0.1",
-    "sinon-chai": "^3.7.0",
-    "ts-loader": "^9.2.6",
-    "ts-node": "^10.4.0",
-    "tslib": "^2.3.1",
-    "typescript": "^4.4.4"
-  },
-  "dependencies": {
-    "camelcase-keys": "^7.0.1",
-    "just-clone": "^5.0.1",
-    "snakecase-keys": "^5.1.0"
-  },
-  "peerDependencies": {
-    "@serverless/cloud": "^2.3.7"
-  },
-  "nyc": {
-    "extends": "nyc-config-tsx",
-    "all": true,
-    "include": [
-      "src/**/*.ts",
-      "src/**/*.tsx"
+    "name": "serverless-cloud-data-utils",
+    "description": "Utilities for working with serverless cloud data APIs.",
+    "version": "0.3.3",
+    "main": "dist/index.js",
+    "types": "dist/index.d.ts",
+    "type": "module",
+    "scripts": {
+        "test": "cross-env NODE_OPTIONS=--experimental-vm-modules jest",
+        "build": "tsc -p conf/typescript/build.json",
+        "cov:inst": "nyc instrument --compact false src .instrumented",
+        "cov:gen": "nyc npm run test",
+        "cov:view": "nyc npm run test && npm run cov:clean",
+        "cov:travis": "nyc npm run test && npx codecov",
+        "cov:clean": "rm -fr ./.nyc_output && rm -fr ./coverage"
+    },
+    "files": [
+        "dist/es6"
     ],
-    "exclude": [
-      "src/**/test/*",
-      "src/types/*"
+    "sideEffects": false,
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/loreanvictor/serverless-cloud-data-utils.git"
+    },
+    "keywords": [
+        "serverless",
+        "data",
+        "orm"
     ],
-    "reporter": [
-      "text",
-      "lcov"
-    ]
-  }
+    "author": "Eugene Ghanizadeh Khoub <ghanizadeh.eugene@gmail.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/loreanvictor/serverless-cloud-data-utils/issues"
+    },
+    "homepage": "https://github.com/loreanvictor/serverless-cloud-data-utils#readme",
+    "devDependencies": {
+        "@serverless/cloud": "^2.3.7",
+        "@types/chai": "^4.2.22",
+        "@types/chai-as-promised": "^7.1.4",
+        "@types/jest": "^27.5.1",
+        "@types/just-clone": "^3.2.2",
+        "@types/mocha": "^9.0.0",
+        "@types/node": "^16.11.6",
+        "@types/sinon": "^10.0.6",
+        "@types/sinon-chai": "^3.2.5",
+        "@typescript-eslint/eslint-plugin": "^5.3.0",
+        "@typescript-eslint/parser": "^5.3.0",
+        "chai": "^4.3.4",
+        "chai-as-promised": "^7.1.1",
+        "eslint": "^8.2.0",
+        "jest": "^28.1.0",
+        "mocha": "^9.1.3",
+        "nyc": "^15.1.0",
+        "nyc-config-tsx": "^0.1.0",
+        "sinon": "^12.0.1",
+        "sinon-chai": "^3.7.0",
+        "ts-jest": "^28.0.3",
+        "ts-loader": "^9.2.6",
+        "ts-node": "^10.4.0",
+        "tslib": "^2.3.1",
+        "typescript": "^4.4.4"
+    },
+    "dependencies": {
+        "camelcase-keys": "^7.0.1",
+        "cross-env": "^7.0.3",
+        "just-clone": "^5.0.1",
+        "snakecase-keys": "^5.1.0"
+    },
+    "peerDependencies": {
+        "@serverless/cloud": "^2.3.7"
+    },
+    "nyc": {
+        "extends": "nyc-config-tsx",
+        "all": true,
+        "include": [
+            "src/**/*.ts",
+            "src/**/*.tsx"
+        ],
+        "exclude": [
+            "src/**/test/*",
+            "src/types/*"
+        ],
+        "reporter": [
+            "text",
+            "lcov"
+        ]
+    }
 }

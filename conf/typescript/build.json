@@ -3,6 +3,7 @@
     "compilerOptions": {
         "inlineSources": true,
         "target": "es6",
+        "skipLibCheck": true,
         "outDir": "../../dist/"
     }
 }

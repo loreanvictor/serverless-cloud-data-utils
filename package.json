@@ -1,15 +1,15 @@
 {
   "name": "serverless-cloud-data-utils",
   "description": "Utilities for working with serverless cloud data APIs.",
-  "version": "0.3.3",
-  "main": "dist/es5/index.js",
+  "version": "0.3.4",
+  "main": "dist/commonjs/index.js",
   "module": "dist/es6/index.js",
   "types": "dist/es6/index.d.ts",
   "scripts": {
     "test": "mocha -r ./conf/test src/**/*.test.ts src/**/**/*.test.ts",
-    "build-es5": "tsc -p conf/typescript/es5.json",
+    "build-commonjs": "tsc -p conf/typescript/commonjs.json",
     "build-es6": "tsc -p conf/typescript/es6.json",
-    "build": "npm run build-es5 && npm run build-es6",
+    "build": "npm run build-commonjs && npm run build-es6",
     "cov:inst": "nyc instrument --compact false src .instrumented",
     "cov:gen": "nyc npm run test",
     "cov:view": "nyc npm run test && npm run cov:clean",
@@ -18,7 +18,7 @@
   },
   "files": [
     "dist/es6",
-    "dist/es5"
+    "dist/commonjs"
   ],
   "sideEffects": false,
   "repository": {

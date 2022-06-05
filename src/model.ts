@@ -7,7 +7,7 @@ import { isSecondary } from './indexes'
 import { Exact } from './query'
 import { Labels, KeyPath } from './type-helpers'
 
-const MAX_SHADOW_KEYS = 5
+export const MAX_SHADOW_KEYS = 5
 
 function prune(model: Model<any>): any {
   const copy: any = clone(model)

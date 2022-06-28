@@ -25,7 +25,7 @@ jobs:
         uses: codecov/codecov-action@v1
 
       - name: Upload to Codacy
-        if: ${{ github.ref == 'refs/heads/master' }}
+        if: ${{ github.ref == 'refs/heads/main' }}
         uses: codacy/codacy-coverage-reporter-action@master
         with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}

@@ -1,11 +1,9 @@
 {
-  "extends": "./conf/typescript/test",
-  "compilerOptions": {
-    "target": "es6",
-    "declaration": false
-  },
-  "include": [
-    "./src/**/*",
-    "./samples/**/*",
-  ]
+    "extends": "./conf/typescript/test",
+    "compilerOptions": {
+        "target": "es6",
+        "declaration": false,
+        "types": ["node", "jest"]
+    },
+    "include": ["./src/**/*", "./samples/**/*"]
 }

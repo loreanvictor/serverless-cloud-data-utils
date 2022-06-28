@@ -1,8 +1,9 @@
 {
-  "extends": "./build",
-  "compilerOptions": {
-    "inlineSources": true,
-    "target": "esnext",
-    "outDir": "../../dist/es6/"
-  }
+    "extends": "./build",
+    "compilerOptions": {
+        "inlineSources": true,
+        "target": "esnext",
+        "skipLibCheck": true,
+        "outDir": "../../dist/es6/"
+    }
 }

@@ -1,7 +1,18 @@
-import { expect } from 'chai'
-import { mockDataAPI } from './util'
-
+import * as mockCloud from '@serverless/cloud'
 import { Model, buildIndex, indexBy } from '..'
+import { jest } from '@jest/globals'
+
+jest.mock('@serverless/cloud', () => ({
+  __esModule: true,
+  data: {
+    get: jest.fn(),
+    getByLabel: jest.fn(),
+    on: jest.fn(),
+    set: jest.fn(),
+    remove: jest.fn(),
+    seed: jest.fn(),
+  },
+}))
 
 const ID = buildIndex()
 const X = buildIndex({ namespace: 'M', label: 'label1' })
@@ -129,43 +140,45 @@ class R extends Model<R> {
   }
 }
 
+beforeEach(() => jest.clearAllMocks())
+
 describe('Model', () => {
   it('should create a new record based on its indexes.', async () => {
-    const { set } = mockDataAPI()
-    set.resolves()
-
+    const { set } = mockCloud.data
     const m = new M()
     m.id = 'hola'
     m.theX = 2
     m.y = 'YOLO'
-
     await m.save()
-    set.should.have.been.calledOnce
-    set.firstCall.firstArg.should.equal('hola')
-    set.firstCall.args[1].should.eql({
-      id: 'hola',
-      the_x: 2,
-      y: 'YOLO',
-    })
-    set.firstCall.lastArg.should.eql({
-      label1: 'M:2',
-      label2: 'yolo',
-    })
+    expect(set).toBeCalledTimes(1)
+    expect(set).toHaveBeenCalledWith(
+      'hola',
+      {
+        id: 'hola',
+        the_x: 2,
+        y: 'YOLO',
+      },
+      {
+        label1: 'M:2',
+        label2: 'yolo',
+      }
+    )
   })
 
   it('should create a new record where no secondary keys supplied.', async () => {
-    const { set } = mockDataAPI()
-    set.resolves()
-
+    const { set } = mockCloud.data
     const q = new Q()
     q.id = 'hola'
 
     await q.save()
-    set.should.have.been.calledOnce
-    set.firstCall.firstArg.should.equal('hola')
-    set.firstCall.args[1].should.eql({
-      id: 'hola',
-    })
+    expect(set).toBeCalledTimes(1)
+    expect(set).toHaveBeenCalledWith(
+      'hola',
+      {
+        id: 'hola',
+      },
+      {}
+    )
   })
 
   it('should load from db records.', async () => {
@@ -175,14 +188,13 @@ describe('Model', () => {
       y: 'WHATEVS',
     })
 
-    m.id.should.equal('hola')
-    m.theX.should.equal(42)
-    m.y.should.equal('WHATEVS')
+    expect(m.id).toEqual('hola')
+    expect(m.theX).toEqual(42)
+    expect(m.y).toEqual('WHATEVS')
   })
 
   it('should be able to delete itself.', async () => {
-    const { remove } = mockDataAPI()
-
+    const { remove } = mockCloud.data
     const m = new M({
       id: 'hola',
       the_x: 42,
@@ -190,11 +202,12 @@ describe('Model', () => {
     })
 
     await m.delete()
-    remove.should.have.been.calledOnceWith('hola')
+    expect(remove).toBeCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith('hola')
   })
 
   it('should be able to update itself.', async () => {
-    const { set, remove } = mockDataAPI()
+    const { set, remove } = mockCloud.data
 
     const m = new M({
       id: 'hola',
@@ -205,22 +218,25 @@ describe('Model', () => {
     m.theX = 43
     await m.save()
 
-    remove.should.not.have.been.called
-    set.should.have.been.calledOnce
-    set.firstCall.firstArg.should.equal('hola')
-    set.firstCall.args[1].should.eql({
-      id: 'hola',
-      the_x: 43,
-      y: 'WHATEVS',
-    })
-    set.firstCall.lastArg.should.eql({
-      label1: 'M:43',
-      label2: 'whatevs',
-    })
+    expect(remove).not.toBeCalled()
+    expect(set).toBeCalledTimes(1)
+
+    expect(set).toHaveBeenCalledWith(
+      'hola',
+      {
+        id: 'hola',
+        the_x: 43,
+        y: 'WHATEVS',
+      },
+      {
+        label1: 'M:43',
+        label2: 'whatevs',
+      }
+    )
   })
 
   it('should remove previous entry if its primary key has changed.', async () => {
-    const { set, remove } = mockDataAPI()
+    const { set, remove } = mockCloud.data
 
     const m = new M({
       id: 'hola',
@@ -231,18 +247,20 @@ describe('Model', () => {
     m.id = 'yolo'
     await m.save()
 
-    remove.should.have.been.calledOnceWith('hola')
-    set.should.have.been.calledOnce
-    set.firstCall.firstArg.should.equal('yolo')
-    set.firstCall.args[1].should.eql({
-      id: 'yolo',
-      the_x: 42,
-      y: 'WHATEVS',
-    })
-    set.firstCall.lastArg.should.eql({
-      label1: 'M:42',
-      label2: 'whatevs',
-    })
+    expect(remove).toBeCalledTimes(1)
+    expect(set).toBeCalledTimes(1)
+    expect(set).toHaveBeenCalledWith(
+      'yolo',
+      {
+        id: 'yolo',
+        the_x: 42,
+        y: 'WHATEVS',
+      },
+      {
+        label1: 'M:42',
+        label2: 'whatevs',
+      }
+    )
   })
 
   it('should throw an error during saving if no primary key specified.', async () => {
@@ -250,7 +268,7 @@ describe('Model', () => {
     n.x = 42
     n.y = 'WHATEVS'
 
-    await expect(n.save()).to.eventually.be.rejected
+    await expect(n.save()).rejects.toThrowError()
   })
 
   it('should throw an error during creation if no primary key specified.', () => {
@@ -260,11 +278,11 @@ describe('Model', () => {
           x: 42,
           y: 'WHATEVS',
         })
-    ).to.throw()
+    ).toThrowError()
   })
 
   it('should create model with shadow keys.', async () => {
-    const { set } = mockDataAPI()
+    const { set } = mockCloud.data
     const o = new O({
       id: 'Yo',
       x: 'Origato',
@@ -272,51 +290,62 @@ describe('Model', () => {
       c: 'WHATEVS',
     })
     await o.save()
-    set.should.have.callCount(4)
-    set.firstCall.firstArg.should.equal('Yo')
-    set.firstCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.firstCall.lastArg.should.eql({
-      label1: 'M:Origato',
-    })
-    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
-    set.secondCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.secondCall.lastArg.should.eql({
-      label1: 'O:T_boba:X_Origato:Yo',
-    })
-    set.thirdCall.firstArg.should.equal('O:T_joba:Yo')
-    set.thirdCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.thirdCall.lastArg.should.eql({
-      label1: 'O:T_joba:X_Origato:Yo',
-    })
-    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
-    set.lastCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.lastCall.lastArg.should.eql({
-      label1: 'O:C_WHATEVS:X_Origato:boba,joba',
-    })
+    expect(set).toBeCalledTimes(4)
+    expect(set).toHaveBeenNthCalledWith(
+      1,
+      'Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'M:Origato',
+      }
+    )
+    expect(set).toHaveBeenNthCalledWith(
+      2,
+      'O:T_boba:Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:T_boba:X_Origato:Yo',
+      }
+    )
+    expect(set).toHaveBeenNthCalledWith(
+      3,
+      'O:T_joba:Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:T_joba:X_Origato:Yo',
+      }
+    )
+    expect(set).toHaveBeenLastCalledWith(
+      'O:C_WHATEVS:Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:C_WHATEVS:X_Origato:boba,joba',
+      }
+    )
   })
 
   it('should remove previous entry and shadowKey entries if primary key has changed.', async () => {
-    const { set, remove } = mockDataAPI()
+    const { set, remove } = mockCloud.data
 
     const o = new O({
       id: 'Yo',
@@ -329,55 +358,67 @@ describe('Model', () => {
 
     await o.save()
 
-    remove.should.have.callCount(4)
-    remove.firstCall.firstArg.should.equal('Yo')
-    remove.secondCall.firstArg.should.equal('O:T_boba:Yo')
-    remove.thirdCall.firstArg.should.equal('O:T_joba:Yo')
-    remove.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
-    set.firstCall.firstArg.should.equal('Bye')
-    set.firstCall.args[1].should.eql({
-      id: 'Bye',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.firstCall.lastArg.should.eql({
-      label1: 'M:Origato',
-    })
-    set.secondCall.firstArg.should.equal('O:T_boba:Bye')
-    set.secondCall.args[1].should.eql({
-      id: 'Bye',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.secondCall.lastArg.should.eql({
-      label1: 'O:T_boba:X_Origato:Bye',
-    })
-    set.thirdCall.firstArg.should.equal('O:T_joba:Bye')
-    set.thirdCall.args[1].should.eql({
-      id: 'Bye',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.thirdCall.lastArg.should.eql({
-      label1: 'O:T_joba:X_Origato:Bye',
-    })
-    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Bye')
-    set.lastCall.args[1].should.eql({
-      id: 'Bye',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'WHATEVS',
-    })
-    set.lastCall.lastArg.should.eql({
-      label1: 'O:C_WHATEVS:X_Origato:boba,joba',
-    })
+    expect(remove).toBeCalledTimes(4)
+    expect(remove).toHaveBeenNthCalledWith(1, 'Yo')
+    expect(remove).toHaveBeenNthCalledWith(2, 'O:T_boba:Yo')
+    expect(remove).toHaveBeenNthCalledWith(3, 'O:T_joba:Yo')
+    expect(remove).toHaveBeenLastCalledWith('O:C_WHATEVS:Yo')
+
+    expect(set).toHaveBeenNthCalledWith(
+      1,
+      'Bye',
+      {
+        id: 'Bye',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'M:Origato',
+      }
+    )
+    expect(set).toHaveBeenNthCalledWith(
+      2,
+      'O:T_boba:Bye',
+      {
+        id: 'Bye',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:T_boba:X_Origato:Bye',
+      }
+    )
+    expect(set).toHaveBeenNthCalledWith(
+      3,
+      'O:T_joba:Bye',
+      {
+        id: 'Bye',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:T_joba:X_Origato:Bye',
+      }
+    )
+    expect(set).toHaveBeenLastCalledWith(
+      'O:C_WHATEVS:Bye',
+      {
+        id: 'Bye',
+        x: 'Origato',
+        t: ['boba', 'joba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:C_WHATEVS:X_Origato:boba,joba',
+      }
+    )
   })
 
   it('should remove shadow entry where shadowKeys change', async () => {
-    const { set, remove } = mockDataAPI()
+    const { set, remove } = mockCloud.data
 
     const o = new O({
       id: 'Yo',
@@ -390,38 +431,47 @@ describe('Model', () => {
 
     await o.save()
 
-    remove.should.have.callCount(1)
-    remove.firstCall.firstArg.should.equal('O:T_joba:Yo')
-    set.firstCall.firstArg.should.equal('Yo')
-    set.firstCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba'],
-      c: 'WHATEVS',
-    })
-    set.firstCall.lastArg.should.eql({
-      label1: 'M:Origato',
-    })
-    set.secondCall.firstArg.should.equal('O:T_boba:Yo')
-    set.secondCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba'],
-      c: 'WHATEVS',
-    })
-    set.secondCall.lastArg.should.eql({
-      label1: 'O:T_boba:X_Origato:Yo',
-    })
-    set.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
-    set.lastCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba'],
-      c: 'WHATEVS',
-    })
-    set.lastCall.lastArg.should.eql({
-      label1: 'O:C_WHATEVS:X_Origato:boba',
-    })
+    expect(remove).toBeCalledTimes(1)
+    expect(remove).toHaveBeenCalledWith('O:T_joba:Yo')
+
+    expect(set).toHaveBeenNthCalledWith(
+      1,
+      'Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'M:Origato',
+      }
+    )
+    expect(set).toHaveBeenNthCalledWith(
+      2,
+      'O:T_boba:Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:T_boba:X_Origato:Yo',
+      }
+    )
+    expect(set).toHaveBeenLastCalledWith(
+      'O:C_WHATEVS:Yo',
+      {
+        id: 'Yo',
+        x: 'Origato',
+        t: ['boba'],
+        c: 'WHATEVS',
+      },
+      {
+        label1: 'O:C_WHATEVS:X_Origato:boba',
+      }
+    )
   })
 
   it('should throw an error if too many shadow keys are provided.', async () => {
@@ -433,12 +483,11 @@ describe('Model', () => {
           t: ['boba', 'joba', 'toga', 'hoga', 'roma'],
           c: 'WHATEVS',
         })
-    ).to.throw()
-
+    ).toThrowError()
   })
 
   it('should allow more than the maximum shadow keys with UNSAFE_shadowKeysUnbounded.', async () => {
-    const { set } = mockDataAPI()
+    const { set } = mockCloud.data
     const p = new P({
       id: 'Yo',
       x: 'Origato',
@@ -447,12 +496,7 @@ describe('Model', () => {
     })
 
     await p.save()
-    set.firstCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
-      c: 'WHATEVS',
-    })
+    expect(set).toHaveBeenCalledTimes(7)
   })
 
   it('should throw an error if both UNSAFE_shadowKeysUnbounded and shadowKeys methods are used.', async () => {
@@ -464,11 +508,11 @@ describe('Model', () => {
           t: ['boba', 'joba'],
           c: 'WHATEVS',
         })
-    ).to.throw()
+    ).toThrowError()
   })
 
   it('should delete itself and shadow keys.', async () => {
-    const { remove } = mockDataAPI()
+    const { remove } = mockCloud.data
 
     const o = new O({
       id: 'Yo',
@@ -478,15 +522,15 @@ describe('Model', () => {
     })
 
     await o.delete()
-    remove.should.have.callCount(4)
-    remove.firstCall.firstArg.should.equal('Yo')
-    remove.secondCall.firstArg.should.equal('O:T_boba:Yo')
-    remove.thirdCall.firstArg.should.equal('O:T_joba:Yo')
-    remove.lastCall.firstArg.should.equal('O:C_WHATEVS:Yo')
+    expect(remove).toBeCalledTimes(4)
+    expect(remove).toHaveBeenNthCalledWith(1, 'Yo')
+    expect(remove).toHaveBeenNthCalledWith(2, 'O:T_boba:Yo')
+    expect(remove).toHaveBeenNthCalledWith(3, 'O:T_joba:Yo')
+    expect(remove).toHaveBeenLastCalledWith('O:C_WHATEVS:Yo')
   })
 
   it('should be able to update itself and shadow entries', async () => {
-    const { set, remove } = mockDataAPI()
+    const { set, remove } = mockCloud.data
 
     const o = new O({
       id: 'Yo',
@@ -498,19 +542,8 @@ describe('Model', () => {
     o.c = 'Bro'
     await o.save()
 
-    remove.should.have.been.calledOnce
-    set.should.have.callCount(4)
-    set.firstCall.firstArg.should.equal('Yo')
-    set.lastCall.firstArg.should.equal('O:C_Bro:Yo')
-    set.lastCall.args[1].should.eql({
-      id: 'Yo',
-      x: 'Origato',
-      t: ['boba', 'joba'],
-      c: 'Bro',
-    })
-    set.lastCall.lastArg.should.eql({
-      label1: 'O:C_Bro:X_Origato:boba,joba',
-    })
+    expect(remove).toBeCalledTimes(1)
+    expect(set).toBeCalledTimes(4)
   })
 
   it('should provide a utility for cleaning up the model.', () => {
@@ -527,7 +560,7 @@ describe('Model', () => {
       },
     }
 
-    m.clean().should.eql({
+    expect(m.clean()).toEqual({
       id: 'hola',
       the_x: 42,
       y: 'WHATEVS',
@@ -541,7 +574,7 @@ describe('Model', () => {
       },
     })
 
-    m.clean(['y']).should.eql({
+    expect(m.clean(['y'])).toEqual({
       the_x: 42,
       id: 'hola',
       z: {
@@ -554,7 +587,7 @@ describe('Model', () => {
       },
     })
 
-    m.clean(['z.o.b.s']).should.eql({
+    expect(m.clean(['z.o.b.s'])).toEqual({
       the_x: 42,
       id: 'hola',
       y: 'WHATEVS',
@@ -566,7 +599,7 @@ describe('Model', () => {
       },
     })
 
-    m.clean(['y', 'z.o.r']).should.eql({
+    expect(m.clean(['y', 'z.o.r'])).toEqual({
       the_x: 42,
       id: 'hola',
       z: {

@@ -1,6 +1,6 @@
 import { Operation, id } from '../operators'
 import { BaseIndex } from '../indexes'
-import { hydrate, ModelConstructor } from '../hydrate'
+import { Hydratable, hydrate, ModelConstructor } from '../hydrate'
 import { BaseQuery } from './base'
 import { ResponseList } from '../type-helpers'
 
@@ -78,7 +78,7 @@ export class MultiQuery<T=any> extends BaseQuery<T> {
    * Resolves the query using given model constructor, and returns a list of hydrated models.
    *
    */
-  async get<M>(constructor: ModelConstructor<M>): Promise<M[]> {
+  async get<M extends Hydratable>(constructor: ModelConstructor<M>): Promise<M[]> {
     return (await this.resolve() as ResponseList<any>).items.map(item => hydrate(constructor, item.value))
   }
 

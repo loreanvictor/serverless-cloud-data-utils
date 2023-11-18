@@ -1,6 +1,6 @@
 import { equals } from '../operators'
 import { BaseIndex } from '../indexes'
-import { hydrate, ModelConstructor } from '../hydrate'
+import { Hydratable, hydrate, ModelConstructor } from '../hydrate'
 import { BaseQuery } from './base'
 import { MultiQuery } from './multi'
 
@@ -20,7 +20,7 @@ export class PrimaryExact<T=any> extends BaseQuery<T> {
    * @returns a hydrated model instance, or undefined if no match is found.
    *
    */
-  async get<M>(constructor: ModelConstructor<M>): Promise<M | undefined> {
+  async get<M extends Hydratable>(constructor: ModelConstructor<M>): Promise<M | undefined> {
     const res = await this.resolve() as object
 
     if (!res) {

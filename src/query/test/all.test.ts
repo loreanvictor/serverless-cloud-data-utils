@@ -9,13 +9,15 @@ describe('all()', () => {
     const { get }  = mockDataAPI()
     get.resolves({ items: [{ key: 1, value: { id: 1 } }, { key: 2, value: { id: 2 }}] })
 
-    const model = fake()
+    const hydrate = fake()
+    const model = fake(() => ({ hydrate }))
     await indexBy(buildIndex()).get(model as any)
 
     get.should.have.been.calledOnceWith('*')
     model.should.have.been.calledTwice
-    model.firstCall.firstArg.should.eql({ id: 1 })
-    model.secondCall.firstArg.should.eql({ id: 2 })
+    hydrate.should.have.been.calledTwice
+    hydrate.firstCall.firstArg.should.eql({ id: 1 })
+    hydrate.secondCall.firstArg.should.eql({ id: 2 })
   })
 
   it('should retreive all matching keys as well.', async () => {
@@ -30,12 +32,14 @@ describe('all()', () => {
     const { get }  = mockDataAPI()
     get.resolves({ id: 42 })
 
-    const model = fake()
+    const hydrate = fake()
+    const model = fake(() => ({ hydrate }))
     await indexBy(buildIndex({ namespace: 'X' })).equals(42).get(model as any)
 
     get.should.have.been.calledOnceWith('X:42')
     model.should.have.been.calledOnce
-    model.firstCall.firstArg.should.eql({ id: 42 })
+    hydrate.should.have.been.calledOnce
+    hydrate.firstCall.firstArg.should.eql({ id: 42 })
   })
 
 
@@ -43,42 +47,48 @@ describe('all()', () => {
     const { get }  = mockDataAPI()
     get.resolves({ id: 42 })
 
-    const model = fake()
+    const hydrate = fake()
+    const model = fake(() => ({ hydrate }))
     await indexBy(buildIndex()).equals(42).get(model as any)
 
     get.should.have.been.calledOnceWith('42')
     model.should.have.been.calledOnce
-    model.firstCall.firstArg.should.eql({ id: 42 })
+    hydrate.should.have.been.calledOnce
+    hydrate.firstCall.firstArg.should.eql({ id: 42 })
   })
 
   it('should return a list of matching labels for secondary keys.', async () => {
     const { get }  = mockDataAPI()
     get.resolves({ items: [{ key: 1, value: { id: 1 } }, { key: 2, value: { id: 2 }}] })
 
-    const model = fake()
+    const hydrate = fake()
+    const model = fake(() => ({ hydrate }))
     await indexBy(buildIndex({ namespace: 'X', label: 'label1' })).equals(42).get(model as any)
 
     get.should.have.been.calledOnce
     get.firstCall.firstArg.should.equal('X:42')
     get.firstCall.lastArg.should.eql({ label: 'label1' })
     model.should.have.been.calledTwice
-    model.firstCall.firstArg.should.eql({ id: 1 })
-    model.secondCall.firstArg.should.eql({ id: 2 })
+    hydrate.should.have.been.calledTwice
+    hydrate.firstCall.firstArg.should.eql({ id: 1 })
+    hydrate.secondCall.firstArg.should.eql({ id: 2 })
   })
 
   it('should return a list of matching labels for anonymous secondary keys.', async () => {
     const { get }  = mockDataAPI()
     get.resolves({ items: [{ key: 1, value: { id: 1 } }, { key: 2, value: { id: 2 }}] })
 
-    const model = fake()
+    const hydrate = fake()
+    const model = fake(() => ({ hydrate }))
     await indexBy(buildIndex({ label: 'label1' })).equals(42).get(model as any)
 
     get.should.have.been.calledOnce
     get.firstCall.firstArg.should.equal('42')
     get.firstCall.lastArg.should.eql({ label: 'label1' })
     model.should.have.been.calledTwice
-    model.firstCall.firstArg.should.eql({ id: 1 })
-    model.secondCall.firstArg.should.eql({ id: 2 })
+    hydrate.should.have.been.calledTwice
+    hydrate.firstCall.firstArg.should.eql({ id: 1 })
+    hydrate.secondCall.firstArg.should.eql({ id: 2 })
   })
 
   it('should query all items before given value.', async () => {

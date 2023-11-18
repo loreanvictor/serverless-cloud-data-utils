@@ -4,8 +4,8 @@
   
 # Utilities for [Serverless Data](https://www.serverless.com/cloud/docs/apps/data)
 
-[![tests](https://img.shields.io/github/workflow/status/loreanvictor/serverless-cloud-data-utils/Test%20and%20Report%20Coverage?label=tests&logo=mocha&logoColor=green)](https://github.com/loreanvictor/serverless-cloud-data-utils/actions?query=workflow%3A%22Test+and+Report+Coverage%22)
-[![security](https://img.shields.io/github/workflow/status/loreanvictor/serverless-cloud-data-utils/CodeQL?label=security)](https://github.com/loreanvictor/serverless-cloud-data-utils/actions?query=workflow%3A%22CodeQL%22)
+
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/loreanvictor/serverless-cloud-data-utils/test-and-report-coverage.yml?label=tests)](https://github.com/loreanvictor/serverless-cloud-data-utils/actions/workflows/test-and-report-coverage.yml)
 [![Codacy Badge](https://app.codacy.com/project/badge/Coverage/e40ed7b97c1c4e6982f64e6644aabf0f)](https://www.codacy.com/gh/loreanvictor/serverless-cloud-data-utils/dashboard?utm_source=github.com&utm_medium=referral&utm_content=loreanvictor/serverless-cloud-data-utils&utm_campaign=Badge_Coverage)
 [![version](https://img.shields.io/npm/v/serverless-cloud-data-utils?logo=npm)](https://www.npmjs.com/package/serverless-cloud-data-utils)
 

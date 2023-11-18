@@ -169,7 +169,8 @@ describe('Model', () => {
   })
 
   it('should load from db records.', async () => {
-    const m = new M({
+    const m = new M()
+    m.hydrate({
       id: 'hola',
       the_x: 42,
       y: 'WHATEVS',
@@ -183,7 +184,8 @@ describe('Model', () => {
   it('should be able to delete itself.', async () => {
     const { remove } = mockDataAPI()
 
-    const m = new M({
+    const m = new M()
+    m.hydrate({
       id: 'hola',
       the_x: 42,
       y: 'WHATEVS',
@@ -196,7 +198,8 @@ describe('Model', () => {
   it('should be able to update itself.', async () => {
     const { set, remove } = mockDataAPI()
 
-    const m = new M({
+    const m = new M()
+    m.hydrate({
       id: 'hola',
       the_x: 42,
       y: 'WHATEVS',
@@ -222,7 +225,8 @@ describe('Model', () => {
   it('should remove previous entry if its primary key has changed.', async () => {
     const { set, remove } = mockDataAPI()
 
-    const m = new M({
+    const m = new M
+    m.hydrate({
       id: 'hola',
       the_x: 42,
       y: 'WHATEVS',
@@ -256,7 +260,7 @@ describe('Model', () => {
   it('should throw an error during creation if no primary key specified.', () => {
     expect(
       () =>
-        new N({
+        new N().hydrate({
           x: 42,
           y: 'WHATEVS',
         })
@@ -265,7 +269,8 @@ describe('Model', () => {
 
   it('should create model with shadow keys.', async () => {
     const { set } = mockDataAPI()
-    const o = new O({
+    const o = new O()
+    o.hydrate({
       id: 'Yo',
       x: 'Origato',
       t: ['boba', 'joba'],
@@ -318,7 +323,8 @@ describe('Model', () => {
   it('should remove previous entry and shadowKey entries if primary key has changed.', async () => {
     const { set, remove } = mockDataAPI()
 
-    const o = new O({
+    const o = new O()
+    o.hydrate({
       id: 'Yo',
       x: 'Origato',
       t: ['boba', 'joba'],
@@ -379,7 +385,8 @@ describe('Model', () => {
   it('should remove shadow entry where shadowKeys change', async () => {
     const { set, remove } = mockDataAPI()
 
-    const o = new O({
+    const o = new O()
+    o.hydrate({
       id: 'Yo',
       x: 'Origato',
       t: ['boba', 'joba'],
@@ -427,7 +434,7 @@ describe('Model', () => {
   it('should throw an error if too many shadow keys are provided.', async () => {
     expect(
       () =>
-        new O({
+        new O().hydrate({
           id: 'Yo',
           x: 'Origato',
           t: ['boba', 'joba', 'toga', 'hoga', 'roma'],
@@ -439,7 +446,8 @@ describe('Model', () => {
 
   it('should allow more than the maximum shadow keys with UNSAFE_shadowKeysUnbounded.', async () => {
     const { set } = mockDataAPI()
-    const p = new P({
+    const p = new P()
+    p.hydrate({
       id: 'Yo',
       x: 'Origato',
       t: ['boba', 'joba', 'toga', 'hoga', 'roma', 'giro'],
@@ -458,7 +466,7 @@ describe('Model', () => {
   it('should throw an error if both UNSAFE_shadowKeysUnbounded and shadowKeys methods are used.', async () => {
     expect(
       () =>
-        new R({
+        new R().hydrate({
           id: 'Yo',
           x: 'Origato',
           t: ['boba', 'joba'],
@@ -470,7 +478,8 @@ describe('Model', () => {
   it('should delete itself and shadow keys.', async () => {
     const { remove } = mockDataAPI()
 
-    const o = new O({
+    const o = new O()
+    o.hydrate({
       id: 'Yo',
       x: 'Origato',
       t: ['boba', 'joba'],
@@ -488,7 +497,8 @@ describe('Model', () => {
   it('should be able to update itself and shadow entries', async () => {
     const { set, remove } = mockDataAPI()
 
-    const o = new O({
+    const o = new O()
+    o.hydrate({
       id: 'Yo',
       x: 'Origato',
       t: ['boba', 'joba'],

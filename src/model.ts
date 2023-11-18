@@ -47,17 +47,16 @@ export abstract class Model<T extends Model<T>> {
   __shadowSnapshots: string[]
   /**
    *
-   * Creates a new model instance. If data is given,
-   * it will be used to populate the model.The given data must have enough
+   * Hydrates the model instance, populating it with given data. The given data must have enough
    * information to produce a primary key.
    *
    * The object will be converted to camel case befor being used
    * to create the model.
    *
    */
-  constructor(obj?: any) {
-    if (obj) {
-      Object.assign(this, camelcase(obj, { deep: true }))
+  hydrate(source: any) {
+    if (source) {
+      Object.assign(this, camelcase(source, { deep: true }))
       this.__snapshot = this.primary()
       this.__shadowSnapshots = this.updateShadowSnapshots()
     }

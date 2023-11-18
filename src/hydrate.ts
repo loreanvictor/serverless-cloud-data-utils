@@ -1,6 +1,12 @@
-export type ModelConstructor<M> = new (fromDB: object) => M
+export interface Hydratable {
+  hydrate(data: any): void
+}
+export type ModelConstructor<M extends Hydratable> = new () => M
 
 
-export function hydrate<M>(constructor: ModelConstructor<M>, data: object): M {
-  return new constructor(data)
+export function hydrate<M extends Hydratable>(constructor: ModelConstructor<M>, data: object): M {
+  const model = new constructor()
+  model.hydrate(data)
+
+  return model
 }
